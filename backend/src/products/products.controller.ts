@@ -6,8 +6,16 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  async findAll() {
+    try {
+      return await this.productsService.findAll();
+    } catch (error) {
+      return { 
+        isError: true, 
+        message: error.message, 
+        stack: error.stack 
+      };
+    }
   }
 
   @Get(':id')
