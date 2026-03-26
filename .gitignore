@@ -1,0 +1,14 @@
+# Cấu hình bỏ qua chung
+node_modules/
+.env
+.DS_Store
+
+# Backend (NestJS)
+dist/
+npm-debug.log
+yarn-error.log
+
+# Frontend (Mặc định cho React/Vite/NextJS)
+build/
+out/
+.next/
