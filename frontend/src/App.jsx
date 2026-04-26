@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
@@ -52,6 +52,24 @@ export default function App() {
   const [authTab, setAuthTab] = useState(0)
   const [search, setSearch] = useState('')
 
+  // State cho Auth
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [user, setUser] = useState(null)
+
+  // Tự động lấy Token từ URL sau khi đăng nhập Google thành công
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (token) {
+      localStorage.setItem('token', token);
+      setUser({ email: 'Google User' }); // Tạm thời đặt tên này
+      window.history.replaceState({}, document.title, "/"); // Xóa token trên URL cho đẹp
+      alert('Đăng nhập bằng Google thành công!');
+    }
+  }, []);
+
   const handleOpenLogin = () => {
     setAuthTab(0)
     setAuthOpen(true)
@@ -60,6 +78,29 @@ export default function App() {
   const handleOpenRegister = () => {
     setAuthTab(1)
     setAuthOpen(true)
+  }
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        localStorage.setItem('token', data.access_token);
+        setUser({ email });
+        setAuthOpen(false);
+        alert('Đăng nhập thành công!');
+      } else {
+        alert(data.message || 'Đăng nhập thất bại');
+      }
+    } catch (error) {
+      alert('Không thể kết nối đến máy chủ');
+    }
   }
 
   return (
@@ -251,12 +292,45 @@ export default function App() {
           {authTab === 0 && (
             <TabPanel value={authTab} index={0}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField label="Email" type="email" fullWidth size="small" />
-                <TextField label="Mật khẩu" type="password" fullWidth size="small" />
+                <TextField 
+                  label="Email" 
+                  type="email" 
+                  fullWidth 
+                  size="small" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <TextField 
+                  label="Mật khẩu" 
+                  type="password" 
+                  fullWidth 
+                  size="small" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
                 <FormControlLabel control={<Checkbox size="small" />} label="Ghi nhớ đăng nhập" />
-                <Button variant="contained" fullWidth size="large">
+                <Button 
+                  variant="contained" 
+                  fullWidth 
+                  size="large"
+                  onClick={handleLogin}
+                >
                   Đăng nhập
                 </Button>
+                
+                <Divider>Hoặc</Divider>
+
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  size="large"
+                  startIcon={<img src="https://www.google.com/favicon.ico" width="20" />}
+                  href="http://localhost:3000/auth/google"
+                  sx={{ color: 'text.primary', borderColor: 'divider' }}
+                >
+                  Tiếp tục với Google
+                </Button>
+
                 <Typography
                   variant="body2"
                   sx={{ textAlign: 'center', color: 'primary.main', cursor: 'pointer' }}
