@@ -27,4 +27,25 @@ export class AuthService {
       access_token: this.jwtService.sign(payload), // Cấp token tại đây
     };
   }
+
+  async googleLogin(req) {
+    if (!req.user) {
+      return 'No user from google';
+    }
+
+    // Kiểm tra xem user này đã có trong DB chưa
+    let user = await this.usersService.findOneByEmail(req.user.email);
+
+    if (!user) {
+      // Nếu chưa có thì tạo mới (đăng ký tự động)
+      user = await this.usersService.create({
+        email: req.user.email,
+        password: '', // Không cần mật khẩu vì đăng nhập qua Google
+        role: 'user',
+      } as any);
+    }
+
+    // Trả về Token của hệ thống mình (để dùng cho các API khác)
+    return this.login(user);
+  }
 }
