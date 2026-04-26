@@ -1,7 +1,9 @@
-import { Controller, Post, Body, UnauthorizedException, Get } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, Get, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service'; // Import thêm UsersService
+import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,18 +14,24 @@ export class AuthController {
 
   // 1. API ĐĂNG KÝ (Tạo user để lấy chỗ chạy test)
   @Post('register')
-  async register(@Body() body: any) {
-    // Lưu ý: Thực tế cần check email đã tồn tại chưa, ở đây làm nhanh để test!
-    const hashedPassword = await bcrypt.hash(body.password, 10);
+  async register(@Body() registerDto: RegisterDto) {
+    // 1. Kiểm tra xem email đã có người dùng chưa
+    const existingUser = await this.usersService.findOneByEmail(registerDto.email);
+    if (existingUser) {
+      throw new BadRequestException('Email này đã được sử dụng, vui lòng chọn email khác');
+    }
+
+    // 2. Nếu chưa có thì mới tiến hành băm mật khẩu và tạo
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     return this.usersService.create({
-      email: body.email,
+      email: registerDto.email,
       password: hashedPassword,
     });
   }
 
   // 2. API ĐĂNG NHẬP
   @Post('login')
-  async login(@Body() loginDto: Record<string, any>) {
+  async login(@Body() loginDto: LoginDto) {
     // Kiểm tra username, password
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     
