@@ -26,4 +26,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   providers: [AuthService, JwtStrategy],
   exports: [AuthService], // Export nếu cần dùng ở file khác
 })
-export class AuthModule {}
+export class AuthModule { }

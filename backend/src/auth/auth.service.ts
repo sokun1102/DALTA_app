@@ -22,7 +22,7 @@ export class AuthService {
 
   async login(user: any) {
     // Đóng gói thông tin (payload) vào JWT (Token)
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload), // Cấp token tại đây
     };
