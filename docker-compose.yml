@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
   # 1. Database: MySQL
   db:
-    image: mysql:8.0
+    build:
+      context: ./database
+      dockerfile: Dockerfile
     container_name: dalta_db
     restart: always
     environment:
@@ -33,6 +33,9 @@ services:
       - DB_NAME=dalta_db
       - JWT_SECRET=Sieu_Bi_Mat_DALTA_Pro_123
       - JWT_EXPIRES_IN=30m
+      - GOOGLE_CLIENT_ID=your-google-client-id
+      - GOOGLE_CLIENT_SECRET=your-google-client-secret
+      - GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
     depends_on:
       - db
 

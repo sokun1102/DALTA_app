@@ -26,4 +26,12 @@ export class UsersService {
     const user = this.usersRepository.create(userData);
     return this.usersRepository.save(user);
   }
+
+  async update(id: number, userData: Partial<User>): Promise<User | null> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) return null;
+
+    Object.assign(user, userData);
+    return this.usersRepository.save(user);
+  }
 }
