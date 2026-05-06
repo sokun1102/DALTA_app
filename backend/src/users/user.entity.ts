@@ -8,6 +8,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  password: string; // Đã mã hóa
+  @Column({ select: false })
+  password: string;
+
+  @Column({ default: 'user' })
+  role: string; // 'admin' hoặc 'user'
 }

@@ -11,7 +11,15 @@ export class UsersService {
   ) {}
 
   async findOneByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    // Chúng ta cần dùng addSelect hoặc khai báo select vì password đã bị ẩn mặc định
+    return this.usersRepository.findOne({ 
+      where: { email },
+      select: ['id', 'email', 'password', 'role'] // Ép buộc lấy cả password ra để kiểm tra
+    });
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
   }
 
   async create(userData: Partial<User>): Promise<User> {

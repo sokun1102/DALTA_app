@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # 1. Database: MySQL
+  db:
+    image: mysql:8.0
+    container_name: dalta_db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=dalta_db
+      - MYSQL_USER=dalta_user
+      - MYSQL_PASSWORD=110204
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # 2. Backend: NestJS
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dalta_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=dalta_user
+      - DB_PASSWORD=110204
+      - DB_NAME=dalta_db
+      - JWT_SECRET=Sieu_Bi_Mat_DALTA_Pro_123
+      - JWT_EXPIRES_IN=30m
+    depends_on:
+      - db
+
+  # 3. Frontend: Vite + React
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dalta_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
