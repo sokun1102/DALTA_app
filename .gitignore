@@ -12,3 +12,7 @@ yarn-error.log
 build/
 out/
 .next/
+
+# Bo qua file tam Word
+~$*.docx
+~*.tmp
