@@ -30,6 +30,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import ProfilePage from './pages/ProfilePage'
 
 // ── placeholder images (picsum)
 const heroImg = 'https://picsum.photos/seed/dalta-hero/1400/600'
@@ -178,6 +179,15 @@ export default function App() {
         <ResetPasswordPage onGoLogin={() => setPage('login')} />
       )}
 
+      {/* ── SHOW PROFILE PAGE ── */}
+      {page === 'profile' && (
+        <ProfilePage
+          user={user}
+          onLogout={() => { handleLogout(); setPage('home') }}
+          onGoHome={() => setPage('home')}
+        />
+      )}
+
       {/* ── SHOW HOME PAGE ── */}
       {page === 'home' && (<>
 
@@ -216,7 +226,10 @@ export default function App() {
 
               {user ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{user.email}</Typography>
+                  <Button size="small" onClick={() => setPage('profile')}
+                    sx={{ fontWeight: 600, color: '#111' }}>
+                    {user.email}
+                  </Button>
                   <Button size="small" onClick={handleLogout} variant="outlined"
                     sx={{ borderColor: '#ddd', color: 'text.secondary' }}>
                     Đăng xuất
