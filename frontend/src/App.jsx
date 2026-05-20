@@ -26,6 +26,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import PersonIcon from '@mui/icons-material/Person'
 import CloseIcon from '@mui/icons-material/Close'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
+import LoginPage from './pages/LoginPage'
 
 // ── placeholder images (picsum)
 const heroImg = 'https://picsum.photos/seed/dalta-hero/1400/600'
@@ -61,6 +62,7 @@ export default function App() {
   const [cartCount, setCartCount] = useState(0)
   const [search, setSearch]       = useState('')
   const [newsletter, setNewsletter] = useState('')
+  const [page, setPage]           = useState('home') // 'home' | 'login'
 
   // Lấy token Google từ URL
   useEffect(() => {
@@ -142,6 +144,17 @@ export default function App() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f0' }}>
 
+      {/* ── SHOW LOGIN PAGE ── */}
+      {page === 'login' && (
+        <LoginPage
+          onLoginSuccess={(u) => { setUser(u); setPage('home') }}
+          onGoRegister={() => { setPage('home'); setAuthTab(1); setAuthOpen(true) }}
+        />
+      )}
+
+      {/* ── SHOW HOME PAGE ── */}
+      {page === 'home' && (<>
+
       {/* ── NAVBAR ── */}
       <AppBar position="sticky" elevation={0}
         sx={{ bgcolor: '#fff', borderBottom: '1px solid #e0e0e0', color: 'text.primary' }}>
@@ -185,7 +198,7 @@ export default function App() {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button size="small" variant="outlined" onClick={() => { setAuthTab(0); setAuthOpen(true) }}
+                  <Button size="small" variant="outlined" onClick={() => setPage('login')}
                     sx={{ borderColor: '#ddd', color: 'text.primary' }}>
                     Đăng nhập
                   </Button>
@@ -193,8 +206,7 @@ export default function App() {
                     Đăng ký
                   </Button>
                 </Box>
-              )}
-            </Box>
+              )}            </Box>
           </Toolbar>
         </Container>
       </AppBar>
@@ -433,6 +445,7 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
+      </>)}
     </Box>
   )
 }
