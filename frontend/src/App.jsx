@@ -27,6 +27,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import CloseIcon from '@mui/icons-material/Close'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 
 // ── placeholder images (picsum)
 const heroImg = 'https://picsum.photos/seed/dalta-hero/1400/600'
@@ -148,7 +149,15 @@ export default function App() {
       {page === 'login' && (
         <LoginPage
           onLoginSuccess={(u) => { setUser(u); setPage('home') }}
-          onGoRegister={() => { setPage('home'); setAuthTab(1); setAuthOpen(true) }}
+          onGoRegister={() => setPage('register')}
+        />
+      )}
+
+      {/* ── SHOW REGISTER PAGE ── */}
+      {page === 'register' && (
+        <RegisterPage
+          onRegisterSuccess={() => setPage('login')}
+          onGoLogin={() => setPage('login')}
         />
       )}
 
@@ -202,10 +211,9 @@ export default function App() {
                     sx={{ borderColor: '#ddd', color: 'text.primary' }}>
                     Đăng nhập
                   </Button>
-                  <Button size="small" variant="contained" onClick={() => { setAuthTab(1); setAuthOpen(true) }}>
+                  <Button size="small" variant="contained" onClick={() => setPage('register')}>
                     Đăng ký
-                  </Button>
-                </Box>
+                  </Button>                </Box>
               )}            </Box>
           </Toolbar>
         </Container>
