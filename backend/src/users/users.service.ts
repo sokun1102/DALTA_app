@@ -31,4 +31,13 @@ export class UsersService {
     await this.usersRepository.update(id, userData);
     return this.usersRepository.findOne({ where: { id } });
   }
+
+  async findByResetToken(token: string): Promise<User | null> {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.resetToken')
+      .addSelect('user.resetTokenExpiry')
+      .where('user.resetToken = :token', { token })
+      .getOne();
+  }
 }

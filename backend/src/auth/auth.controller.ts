@@ -6,6 +6,8 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -64,14 +66,24 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     const result = await this.authService.googleLogin(req);
-    
-    // Kiểm tra nếu là object chứa token thì mới redirect
     if (typeof result === 'object' && result.access_token) {
       return res.redirect(`http://localhost:5173?token=${result.access_token}`);
     }
-    
-    // Nếu có lỗi thì về trang chủ kèm thông báo lỗi
     return res.redirect(`http://localhost:5173?error=login_failed`);
+  }
+
+  // 4. QUÊN MẬT KHẨU
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto.email);
+    return { message: 'Nếu email tồn tại, link đặt lại mật khẩu đã được gửi.' };
+  }
+
+  // 5. ĐẶT LẠI MẬT KHẨU
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Mật khẩu đã được đặt lại thành công.' };
   }
 }
 

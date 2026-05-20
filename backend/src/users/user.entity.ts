@@ -13,4 +13,10 @@ export class User {
 
   @Column({ default: 'user' })
   role: string; // 'admin' hoặc 'user'
+
+  @Column({ nullable: true, select: false })
+  resetToken: string;
+
+  @Column({ nullable: true })
+  resetTokenExpiry: Date;
 }

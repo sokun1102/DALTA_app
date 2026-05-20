@@ -28,6 +28,8 @@ import CloseIcon from '@mui/icons-material/Close'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 // ── placeholder images (picsum)
 const heroImg = 'https://picsum.photos/seed/dalta-hero/1400/600'
@@ -63,7 +65,11 @@ export default function App() {
   const [cartCount, setCartCount] = useState(0)
   const [search, setSearch]       = useState('')
   const [newsletter, setNewsletter] = useState('')
-  const [page, setPage]           = useState('home') // 'home' | 'login'
+  const [page, setPage] = useState(() => {
+    // Tự động vào trang reset-password nếu URL có ?token=
+    const params = new URLSearchParams(window.location.search)
+    return params.get('token') ? 'reset-password' : 'home'
+  })
 
   // Lấy token Google từ URL
   useEffect(() => {
@@ -150,6 +156,7 @@ export default function App() {
         <LoginPage
           onLoginSuccess={(u) => { setUser(u); setPage('home') }}
           onGoRegister={() => setPage('register')}
+          onForgotPassword={() => setPage('forgot-password')}
         />
       )}
 
@@ -159,6 +166,16 @@ export default function App() {
           onRegisterSuccess={() => setPage('login')}
           onGoLogin={() => setPage('login')}
         />
+      )}
+
+      {/* ── SHOW FORGOT PASSWORD PAGE ── */}
+      {page === 'forgot-password' && (
+        <ForgotPasswordPage onGoLogin={() => setPage('login')} />
+      )}
+
+      {/* ── SHOW RESET PASSWORD PAGE ── */}
+      {page === 'reset-password' && (
+        <ResetPasswordPage onGoLogin={() => setPage('login')} />
       )}
 
       {/* ── SHOW HOME PAGE ── */}

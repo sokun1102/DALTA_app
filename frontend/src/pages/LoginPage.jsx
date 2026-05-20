@@ -10,7 +10,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import EmailIcon from '@mui/icons-material/EmailOutlined'
 import LockIcon from '@mui/icons-material/LockOutlined'
 
-export default function LoginPage({ onLoginSuccess, onGoRegister }) {
+export default function LoginPage({ onLoginSuccess, onGoRegister, onForgotPassword }) {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
@@ -149,7 +149,8 @@ export default function LoginPage({ onLoginSuccess, onGoRegister }) {
               sx={{ m: 0 }}
             />
             <Typography variant="body2"
-              sx={{ color: '#1a3de4', fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+              sx={{ color: '#1a3de4', fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              onClick={onForgotPassword}>
               Forgot Password?
             </Typography>
           </Box>
