@@ -1,15 +1,12 @@
 /**
  * =====================================================
- * MAIN APP - Auth + Users Service
+ * CATEGORIES SERVICE MAIN - Chạy trên port 3002
  * =====================================================
- * Chạy trên port 3000
- * Products: port 3001
- * Categories: port 3002
  */
 
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,7 +19,8 @@ async function bootstrap() {
     transform: true,
   }));
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log('Auth + Users Service running on port 3000');
+  const port = process.env.PORT || 3002;
+  await app.listen(port);
+  console.log(`Categories Service running on port ${port}`);
 }
 bootstrap();
