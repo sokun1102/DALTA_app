@@ -13,7 +13,7 @@ services:
       - MYSQL_PASSWORD=110204
     ports:
       - "3307:3306"
-    volumes:
+    volumes:  
       - mysql_data:/var/lib/mysql
 
   # 2. Backend: NestJS
