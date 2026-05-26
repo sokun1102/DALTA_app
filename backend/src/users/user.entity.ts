@@ -12,5 +12,23 @@ export class User {
   password: string;
 
   @Column({ default: 'user' })
-  role: string; // 'admin' hoặc 'user'
+  role: string;
+
+  @Column({ nullable: true })
+  fullName: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true, type: 'date' })
+  birthDate: Date;
+
+  @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true, select: false })
+  resetToken: string;
+
+  @Column({ nullable: true })
+  resetTokenExpiry: Date;
 }
