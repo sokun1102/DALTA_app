@@ -34,8 +34,11 @@ export class UsersService {
   }
 
   async update(id: number, userData: Partial<User>): Promise<User | null> {
-    await this.usersRepository.update(id, userData);
-    return this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) return null;
+
+    Object.assign(user, userData);
+    return this.usersRepository.save(user);
   }
 
   async findByResetToken(token: string): Promise<User | null> {
@@ -46,8 +49,6 @@ export class UsersService {
       .where('user.resetToken = :token', { token })
       .getOne();
   }
-
-  // ── ADDRESS ──
 
   async getAddresses(userId: number): Promise<Address[]> {
     return this.addressRepository.find({ where: { userId } });
@@ -72,10 +73,13 @@ export class UsersService {
   }
 
   async setDefaultAddress(userId: number, id: number): Promise<Address> {
-    // Bỏ default tất cả địa chỉ cũ
+    const address = await this.addressRepository.findOne({ where: { id, userId } });
+    if (!address) throw new NotFoundException('Không tìm thấy địa chỉ');
+
     await this.addressRepository.update({ userId }, { isDefault: false });
-    // Set default cho địa chỉ được chọn
     await this.addressRepository.update({ id, userId }, { isDefault: true });
-    return this.addressRepository.findOne({ where: { id, userId } });
+
+    address.isDefault = true;
+    return address;
   }
 }
