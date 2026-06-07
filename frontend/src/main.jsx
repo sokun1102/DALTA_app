@@ -8,15 +8,24 @@ import App from './App.jsx'
 
 const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
-      main: '#aa3bff',
+      main: '#e11d48',
+    },
+    secondary: {
+      main: '#fb7185',
     },
     background: {
-      default: '#f8f9fa',
+      default: '#050505',
+      paper: '#0f0f14',
+    },
+    text: {
+      primary: '#f8fafc',
+      secondary: 'rgba(248, 250, 252, 0.7)',
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Segoe UI", sans-serif',
+    fontFamily: '"Plus Jakarta Sans", "Be Vietnam Pro", "JetBrains Mono", sans-serif',
   },
 })
 

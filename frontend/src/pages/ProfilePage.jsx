@@ -1,425 +1,473 @@
-import { useState, useEffect } from 'react'
-import Box from '@mui/material/Box'
-import Container from '@mui/material/Container'
-import Grid from '@mui/material/Grid'
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import TextField from '@mui/material/TextField'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
+import { useEffect, useState } from 'react'
+import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
+import Container from '@mui/material/Container'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
 import Divider from '@mui/material/Divider'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
-import AppBar from '@mui/material/AppBar'
-import Toolbar from '@mui/material/Toolbar'
-import LockIcon from '@mui/icons-material/LockOutlined'
-import NotificationsIcon from '@mui/icons-material/NotificationsOutlined'
-import CreditCardIcon from '@mui/icons-material/CreditCardOutlined'
-import LanguageIcon from '@mui/icons-material/LanguageOutlined'
-import LogoutIcon from '@mui/icons-material/Logout'
-import EditIcon from '@mui/icons-material/Edit'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
+import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import DeleteIcon from '@mui/icons-material/Delete'
-import HomeIcon from '@mui/icons-material/Home'
-import LocalShippingIcon from '@mui/icons-material/LocalShipping'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos'
+import EditIcon from '@mui/icons-material/Edit'
+import HomeIcon from '@mui/icons-material/HomeOutlined'
+import LogoutIcon from '@mui/icons-material/Logout'
+import PersonIcon from '@mui/icons-material/PersonOutline'
+import { getAuthToken } from '../services/authToken'
+import { apiFetch } from '../services/apiClient'
 
-const API = 'http://localhost:3000'
+const panelSx = {
+  border: '1px solid rgba(248,250,252,0.12)',
+  borderRadius: 1,
+  background: 'linear-gradient(180deg, rgba(248,250,252,0.08), rgba(248,250,252,0.035)), #080808',
+}
+
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    color: '#f8fafc',
+    borderRadius: 1,
+    background: 'rgba(5,5,5,0.52)',
+    '& fieldset': { borderColor: 'rgba(248,250,252,0.16)' },
+    '&:hover fieldset': { borderColor: 'rgba(244,63,94,0.46)' },
+    '&.Mui-focused fieldset': { borderColor: '#f43f5e' },
+  },
+  '& .MuiInputLabel-root': { color: 'rgba(248,250,252,0.58)' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#fb7185' },
+}
+
+const phonePattern = /^[0-9+\-\s()]{8,20}$/
+
+const paymentMethods = [
+  { id: 'cod', label: 'COD', description: 'Thanh toán khi nhận hàng.' },
+  { id: 'card', label: 'Stripe/card', description: 'Thanh toán thẻ qua Stripe.' },
+  { id: 'bank_transfer', label: 'bank_transfer', description: 'Chuyển khoản ngân hàng.' },
+]
+
+const paymentLabel = {
+  cod: 'COD',
+  card: 'Stripe/card',
+  bank_transfer: 'bank_transfer',
+}
+
+function field(label, value) {
+  return (
+    <Box>
+      <Typography sx={{ color: 'rgba(248,250,252,0.45)', fontSize: 11, fontWeight: 900 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ mt: 0.5, color: '#fff', fontWeight: 800, overflowWrap: 'anywhere' }}>
+        {value === '' || value === null || value === undefined ? 'Chưa thiết lập' : value}
+      </Typography>
+    </Box>
+  )
+}
 
 export default function ProfilePage({ user, onLogout, onGoHome }) {
-  const [profile, setProfile]       = useState(null)
-  const [addresses, setAddresses]   = useState([])
-  const [editOpen, setEditOpen]     = useState(false)
-  const [addrOpen, setAddrOpen]     = useState(false)
-  const [editAddr, setEditAddr]     = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [addresses, setAddresses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [editOpen, setEditOpen] = useState(false)
+  const [addressOpen, setAddressOpen] = useState(false)
+  const [editAddress, setEditAddress] = useState(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
-  // Form states
-  const [fullName, setFullName]     = useState('')
-  const [phone, setPhone]           = useState('')
-  const [birthDate, setBirthDate]   = useState('')
-  const [avatar, setAvatar]         = useState('')
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [defaultPaymentMethod, setDefaultPaymentMethod] = useState('cod')
 
-  // Address form
-  const [addrName, setAddrName]     = useState('')
-  const [addrPhone, setAddrPhone]   = useState('')
-  const [addrStreet, setAddrStreet] = useState('')
-  const [addrCity, setAddrCity]     = useState('')
-  const [addrDistrict, setAddrDistrict] = useState('')
+  const [addressName, setAddressName] = useState('')
+  const [addressPhone, setAddressPhone] = useState('')
+  const [addressStreet, setAddressStreet] = useState('')
+  const [addressDistrict, setAddressDistrict] = useState('')
+  const [addressCity, setAddressCity] = useState('')
 
-  const token = localStorage.getItem('token')
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+  const token = getAuthToken()
+  const displayName = profile?.fullName || user?.email?.split('@')[0] || 'Thành viên AEROTEC'
 
-  useEffect(() => { fetchProfile(); fetchAddresses() }, [])
-
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch(`${API}/users/profile`, { headers })
-      if (res.ok) {
-        const data = await res.json()
-        setProfile(data)
-        setFullName(data.fullName || '')
-        setPhone(data.phone || '')
-        setBirthDate(data.birthDate ? data.birthDate.split('T')[0] : '')
-        setAvatar(data.avatar || '')
-      }
-    } catch {}
+  const applyProfile = (data) => {
+    setProfile(data)
+    setFullName(data?.fullName || '')
+    setPhone(data?.phone || '')
+    setBirthDate(data?.birthDate ? String(data.birthDate).split('T')[0] : '')
+    setDefaultPaymentMethod(data?.defaultPaymentMethod || 'cod')
   }
 
-  const fetchAddresses = async () => {
-    try {
-      const res = await fetch(`${API}/users/addresses`, { headers })
-      if (res.ok) setAddresses(await res.json())
-    } catch {}
+  const loadAccount = async () => {
+    if (!token) {
+      setError('Vui lòng đăng nhập để xem hồ sơ tài khoản.')
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    const [profileResult, addressResult] = await Promise.allSettled([
+      apiFetch('/users/profile', { auth: true }),
+      apiFetch('/users/addresses', { auth: true }),
+    ])
+
+    if (profileResult.status === 'fulfilled') applyProfile(profileResult.value)
+    else setError(profileResult.reason?.message || 'Không thể tải hồ sơ tài khoản.')
+
+    if (addressResult.status === 'fulfilled') setAddresses(Array.isArray(addressResult.value) ? addressResult.value : [])
+    else setError(addressResult.reason?.message || 'Không thể tải địa chỉ nhận hàng.')
+
+    setLoading(false)
   }
 
-  const handleSaveProfile = async () => {
+  useEffect(() => {
+    loadAccount()
+  }, [])
+
+  const uploadAvatar = async (file) => {
+    if (!file) return
+    setError('')
+    setNotice('')
+    if (!file.type.startsWith('image/')) {
+      setError('Vui lòng chọn file ảnh để làm avatar.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Ảnh đại diện không được vượt quá 2MB.')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('avatar', file)
+    setAvatarUploading(true)
     try {
-      const res = await fetch(`${API}/users/profile`, {
-        method: 'PUT', headers,
-        body: JSON.stringify({ fullName, phone, birthDate, avatar }),
+      const updated = await apiFetch('/users/profile/avatar', {
+        method: 'POST',
+        auth: true,
+        body: formData,
+        timeoutMs: 30000,
       })
-      if (res.ok) { await fetchProfile(); setEditOpen(false) }
-      else alert('Cập nhật thất bại')
-    } catch { alert('Không thể kết nối máy chủ') }
+      applyProfile(updated)
+      setNotice('Đã cập nhật ảnh đại diện.')
+    } catch (err) {
+      setError(err.message || 'Không thể tải ảnh đại diện.')
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
-  const openAddAddress = () => {
-    setEditAddr(null)
-    setAddrName(''); setAddrPhone(''); setAddrStreet(''); setAddrCity(''); setAddrDistrict('')
-    setAddrOpen(true)
-  }
+  const saveProfile = async () => {
+    setError('')
+    setNotice('')
+    const cleanName = fullName.trim().replace(/\s+/g, ' ')
+    const cleanPhone = phone.trim()
 
-  const openEditAddress = (addr) => {
-    setEditAddr(addr)
-    setAddrName(addr.fullName); setAddrPhone(addr.phone)
-    setAddrStreet(addr.street); setAddrCity(addr.city); setAddrDistrict(addr.district || '')
-    setAddrOpen(true)
-  }
+    if (cleanName && cleanName.length < 2) {
+      setError('Họ tên phải có ít nhất 2 ký tự.')
+      return
+    }
+    if (cleanPhone && !phonePattern.test(cleanPhone)) {
+      setError('Số điện thoại không hợp lệ.')
+      return
+    }
 
-  const handleSaveAddress = async () => {
-    const body = { fullName: addrName, phone: addrPhone, street: addrStreet, city: addrCity, district: addrDistrict }
     try {
-      const url = editAddr ? `${API}/users/addresses/${editAddr.id}` : `${API}/users/addresses`
-      const method = editAddr ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
-      if (res.ok) { await fetchAddresses(); setAddrOpen(false) }
-      else alert('Lưu địa chỉ thất bại')
-    } catch { alert('Không thể kết nối máy chủ') }
+      const updated = await apiFetch('/users/profile', {
+        method: 'PUT',
+        auth: true,
+        body: JSON.stringify({
+          fullName: cleanName || undefined,
+          phone: cleanPhone || undefined,
+          birthDate: birthDate || undefined,
+          defaultPaymentMethod,
+        }),
+      })
+      applyProfile(updated)
+      setEditOpen(false)
+      setNotice('Đã cập nhật thông tin hồ sơ.')
+    } catch (err) {
+      setError(err.message || 'Không thể cập nhật hồ sơ.')
+    }
   }
 
-  const handleDeleteAddress = async (id) => {
-    if (!confirm('Xóa địa chỉ này?')) return
+  const openCreateAddress = () => {
+    setEditAddress(null)
+    setAddressName(profile?.fullName || '')
+    setAddressPhone(profile?.phone || '')
+    setAddressStreet('')
+    setAddressDistrict('')
+    setAddressCity('')
+    setAddressOpen(true)
+  }
+
+  const openUpdateAddress = (address) => {
+    setEditAddress(address)
+    setAddressName(address.fullName || '')
+    setAddressPhone(address.phone || '')
+    setAddressStreet(address.street || '')
+    setAddressDistrict(address.district || '')
+    setAddressCity(address.city || '')
+    setAddressOpen(true)
+  }
+
+  const saveAddress = async () => {
+    setError('')
+    setNotice('')
+    const body = {
+      fullName: addressName.trim().replace(/\s+/g, ' '),
+      phone: addressPhone.trim(),
+      street: addressStreet.trim(),
+      district: addressDistrict.trim() || undefined,
+      city: addressCity.trim(),
+    }
+
+    if (!body.fullName || !body.phone || !body.street || !body.city) {
+      setError('Vui lòng nhập tên người nhận, số điện thoại, địa chỉ và thành phố/tỉnh.')
+      return
+    }
+    if (!phonePattern.test(body.phone)) {
+      setError('Số điện thoại nhận hàng không hợp lệ.')
+      return
+    }
+
     try {
-      const res = await fetch(`${API}/users/addresses/${id}`, { method: 'DELETE', headers })
-      if (res.ok) fetchAddresses()
-    } catch {}
+      const url = editAddress ? `/users/addresses/${editAddress.id}` : '/users/addresses'
+      await apiFetch(url, {
+        method: editAddress ? 'PUT' : 'POST',
+        auth: true,
+        body: JSON.stringify(body),
+      })
+      await loadAccount()
+      setAddressOpen(false)
+      setNotice(editAddress ? 'Đã cập nhật địa chỉ giao hàng.' : 'Đã thêm địa chỉ giao hàng.')
+    } catch (err) {
+      setError(err.message || 'Không thể lưu địa chỉ giao hàng.')
+    }
   }
 
-  const handleSetDefault = async (id) => {
+  const deleteAddress = async (id) => {
+    if (!confirm('Bạn muốn xóa địa chỉ giao hàng này?')) return
     try {
-      const res = await fetch(`${API}/users/addresses/${id}/default`, { method: 'PUT', headers })
-      if (res.ok) fetchAddresses()
-    } catch {}
+      await apiFetch(`/users/addresses/${id}`, { method: 'DELETE', auth: true })
+      await loadAccount()
+      setNotice('Đã xóa địa chỉ giao hàng.')
+    } catch (err) {
+      setError(err.message || 'Không thể xóa địa chỉ giao hàng.')
+    }
   }
 
-  const displayName = profile?.fullName || user?.email?.split('@')[0] || 'Người dùng'
+  const setDefaultAddress = async (id) => {
+    try {
+      await apiFetch(`/users/addresses/${id}/default`, { method: 'PUT', auth: true })
+      await loadAccount()
+      setNotice('Đã cập nhật địa chỉ mặc định.')
+    } catch (err) {
+      setError(err.message || 'Không thể cập nhật địa chỉ mặc định.')
+    }
+  }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fb' }}>
-
-      {/* NAVBAR */}
-      <AppBar position="static" elevation={0}
-        sx={{ bgcolor: '#fff', borderBottom: '1px solid #e5e7eb', color: 'text.primary' }}>
-        <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: '#1a3de4', cursor: 'pointer' }}
-              onClick={onGoHome}>
-              DALTA
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 3 }}>
-              {['Shop', 'Collections', 'New Arrivals', 'About'].map(item => (
-                <Typography key={item} variant="body2"
-                  sx={{ cursor: 'pointer', color: '#6b7280', '&:hover': { color: '#111' } }}>
-                  {item}
-                </Typography>
-              ))}
-            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
-
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-
-        {/* HEADER */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
-          <Box>
-            <Typography variant="overline" sx={{ color: '#1a3de4', letterSpacing: 2, fontWeight: 700 }}>
-              ACCOUNT OVERVIEW
-            </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 800, color: '#111', mt: 0.5 }}>
-              {displayName}
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#6b7280', mt: 1, maxWidth: 480 }}>
-              Chào mừng trở lại. Quản lý thông tin cá nhân, địa chỉ giao hàng và lịch sử đơn hàng của bạn.
-            </Typography>
+    <Box sx={{ minHeight: '100vh', color: '#f8fafc', background: 'radial-gradient(circle at 78% 18%, rgba(225,29,72,0.22), transparent 28%), radial-gradient(circle at 10% 72%, rgba(245,158,11,0.12), transparent 32%), #050505' }}>
+      <Box sx={{ borderBottom: '1px solid rgba(248,250,252,0.1)', background: 'rgba(5,5,5,0.72)', backdropFilter: 'blur(18px)' }}>
+        <Container maxWidth="xl" sx={{ minHeight: 74, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ display: 'grid', lineHeight: 1 }}>
+            <Typography sx={{ fontSize: 22, fontWeight: 950 }}>AEROTEC</Typography>
+            <Typography sx={{ color: '#fb7185', fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>tài khoản phụ tùng</Typography>
           </Box>
-          <Avatar src={profile?.avatar}
-            sx={{ width: 100, height: 100, bgcolor: '#e8edf7', border: '3px solid #fff',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.10)', fontSize: 40 }}>
-            {displayName[0]?.toUpperCase()}
-          </Avatar>
-        </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Quay lại danh mục">
+              <IconButton onClick={onGoHome} sx={{ color: '#fff', border: '1px solid rgba(248,250,252,0.14)' }}>
+                <ArrowBackIcon />
+              </IconButton>
+            </Tooltip>
+            <Button startIcon={<LogoutIcon />} onClick={onLogout} sx={{ color: '#fff', border: '1px solid rgba(248,250,252,0.16)', borderRadius: 1, fontWeight: 900, textTransform: 'none' }}>
+              Đăng xuất
+            </Button>
+          </Box>
+        </Container>
+      </Box>
 
-        <Grid container spacing={3}>
-          {/* LEFT COLUMN */}
-          <Grid size={{ xs: 12, md: 8 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '0.72fr 1.28fr' }, gap: 3 }}>
+          <Box sx={{ ...panelSx, p: { xs: 3, md: 4 }, alignSelf: 'start' }}>
+            <Chip label="Tổng quan tài khoản" sx={{ color: '#fecdd3', border: '1px solid rgba(244,63,94,0.4)', background: 'rgba(225,29,72,0.14)', fontWeight: 900 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mt: 3 }}>
+              <Avatar src={profile?.avatar || ''} sx={{ width: 86, height: 86, bgcolor: '#e11d48', fontSize: 34, fontWeight: 950 }}>
+                {displayName[0]?.toUpperCase() || <PersonIcon />}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontSize: { xs: 32, md: 44 }, lineHeight: 1, fontWeight: 950, overflowWrap: 'anywhere' }}>{displayName}</Typography>
+                <Typography sx={{ mt: 1, color: 'rgba(248,250,252,0.58)', overflowWrap: 'anywhere' }}>{profile?.email || user?.email || 'Khách hàng đã đăng nhập'}</Typography>
+              </Box>
+            </Box>
+            <Button fullWidth component="label" startIcon={<CloudUploadIcon />} disabled={avatarUploading} sx={{ mt: 2.5, minHeight: 42, color: '#f8fafc', border: '1px solid rgba(248,250,252,0.16)', borderRadius: 1, fontWeight: 900, textTransform: 'none' }}>
+              {avatarUploading ? 'Đang tải ảnh...' : 'Tải ảnh avatar'}
+              <input hidden type="file" accept="image/*" onChange={(event) => uploadAvatar(event.target.files?.[0])} />
+            </Button>
+            <Divider sx={{ my: 3, borderColor: 'rgba(248,250,252,0.1)' }} />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 6 }}>{field('HỒ SƠ', profile?.fullName ? 'Đầy đủ' : 'Cần cập nhật')}</Grid>
+              <Grid size={{ xs: 6 }}>{field('ĐỊA CHỈ', addresses.length)}</Grid>
+              <Grid size={{ xs: 6 }}>{field('THANH TOÁN', paymentLabel[profile?.defaultPaymentMethod || 'cod'])}</Grid>
+              <Grid size={{ xs: 6 }}>{field('PHIÊN LÀM VIỆC', token ? 'Hoạt động' : 'Hết hạn')}</Grid>
+            </Grid>
+            <Button fullWidth startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ mt: 3, minHeight: 46, color: '#fff', borderRadius: 1, fontWeight: 950, textTransform: 'none', background: 'linear-gradient(135deg, #e11d48, #f97316)' }}>
+              Chỉnh sửa hồ sơ
+            </Button>
+          </Box>
 
-            {/* Personal Information */}
-            <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3, mb: 3 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>Personal Information</Typography>
-                  <Button size="small" startIcon={<EditIcon />} onClick={() => setEditOpen(true)}
-                    sx={{ color: '#1a3de4', fontWeight: 600 }}>
-                    Edit details
-                  </Button>
+          <Box sx={{ display: 'grid', gap: 3 }}>
+            {error && <Alert severity="error">{error}</Alert>}
+            {notice && <Alert severity="success">{notice}</Alert>}
+            {loading && <Alert severity="info">Đang tải dữ liệu tài khoản...</Alert>}
+
+            <Box sx={{ ...panelSx, p: { xs: 2.5, md: 3 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 24, fontWeight: 950 }}>Thông tin cá nhân</Typography>
+                  <Typography sx={{ color: 'rgba(248,250,252,0.56)' }}>Thông tin định danh khách hàng đã lưu.</Typography>
                 </Box>
+                <Button startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: '#fb7185', fontWeight: 900, textTransform: 'none' }}>Chỉnh sửa</Button>
+              </Box>
+              <Grid container spacing={2.5}>
+                <Grid size={{ xs: 12, sm: 6 }}>{field('HỌ VÀ TÊN', profile?.fullName)}</Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>{field('EMAIL', profile?.email || user?.email)}</Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>{field('SỐ ĐIỆN THOẠI', profile?.phone)}</Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>{field('NGÀY SINH', profile?.birthDate ? new Date(profile.birthDate).toLocaleDateString('vi-VN') : '')}</Grid>
+              </Grid>
+            </Box>
 
-                <Grid container spacing={3}>
-                  {[
-                    { label: 'FULL NAME', value: profile?.fullName || '—' },
-                    { label: 'EMAIL ADDRESS', value: profile?.email || user?.email || '—' },
-                    { label: 'PHONE NUMBER', value: profile?.phone || '—' },
-                    { label: 'DATE OF BIRTH', value: profile?.birthDate ? new Date(profile.birthDate).toLocaleDateString('vi-VN') : '—' },
-                  ].map(item => (
-                    <Grid key={item.label} size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 1, color: '#9ca3af' }}>
-                        {item.label}
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500, color: '#111', mt: 0.3 }}>
-                        {item.value}
-                      </Typography>
+            <Box sx={{ ...panelSx, p: { xs: 2.5, md: 3 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 2.5 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 24, fontWeight: 950 }}>Thanh toán</Typography>
+                  <Typography sx={{ color: 'rgba(248,250,252,0.56)' }}>Phương thức mặc định sẽ được chọn sẵn khi checkout.</Typography>
+                </Box>
+                <Button startIcon={<EditIcon />} onClick={() => setEditOpen(true)} sx={{ color: '#fb7185', fontWeight: 900, textTransform: 'none' }}>Cập nhật</Button>
+              </Box>
+              <Grid container spacing={1.5}>
+                {paymentMethods.map((method) => {
+                  const active = (profile?.defaultPaymentMethod || 'cod') === method.id
+                  return (
+                    <Grid key={method.id} size={{ xs: 12, md: 4 }}>
+                      <Box sx={{ height: '100%', p: 2, border: '1px solid', borderColor: active ? 'rgba(244,63,94,0.7)' : 'rgba(248,250,252,0.12)', borderRadius: 1, background: active ? 'rgba(225,29,72,0.12)' : 'rgba(5,5,5,0.42)' }}>
+                        <Typography sx={{ color: '#fff', fontWeight: 950 }}>{method.label}</Typography>
+                        <Typography sx={{ mt: 0.75, color: 'rgba(248,250,252,0.58)', fontSize: 13 }}>{method.description}</Typography>
+                      </Box>
+                    </Grid>
+                  )
+                })}
+              </Grid>
+            </Box>
+
+            <Box sx={{ ...panelSx, p: { xs: 2.5, md: 3 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 24, fontWeight: 950 }}>Địa chỉ nhận hàng</Typography>
+                  <Typography sx={{ color: 'rgba(248,250,252,0.56)' }}>Các địa chỉ đã lưu để thanh toán.</Typography>
+                </Box>
+                <Button startIcon={<AddIcon />} onClick={openCreateAddress} sx={{ color: '#fb7185', fontWeight: 900, textTransform: 'none' }}>Thêm địa chỉ</Button>
+              </Box>
+              {addresses.length === 0 ? (
+                <Box sx={{ p: 3, border: '1px dashed rgba(248,250,252,0.18)', borderRadius: 1, textAlign: 'center' }}>
+                  <HomeIcon sx={{ color: '#fb7185', fontSize: 34 }} />
+                  <Typography sx={{ mt: 1, color: 'rgba(248,250,252,0.62)' }}>Chưa có địa chỉ nhận hàng nào được lưu.</Typography>
+                </Box>
+              ) : (
+                <Grid container spacing={2}>
+                  {addresses.map((address) => (
+                    <Grid key={address.id} size={{ xs: 12, md: 6 }}>
+                      <Box sx={{ minHeight: 184, p: 2, border: '1px solid', borderColor: address.isDefault ? 'rgba(244,63,94,0.62)' : 'rgba(248,250,252,0.12)', borderRadius: 1, background: address.isDefault ? 'rgba(225,29,72,0.12)' : 'rgba(5,5,5,0.42)' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 1 }}>
+                          <Box>
+                            <Typography sx={{ fontWeight: 950 }}>{address.fullName}</Typography>
+                            <Typography sx={{ color: 'rgba(248,250,252,0.58)' }}>{address.phone}</Typography>
+                          </Box>
+                          {address.isDefault && <Chip label="Mặc định" size="small" sx={{ color: '#fecdd3', background: 'rgba(225,29,72,0.24)', fontWeight: 900 }} />}
+                        </Box>
+                        <Typography sx={{ mt: 2, color: 'rgba(248,250,252,0.74)' }}>
+                          {address.street}{address.district ? `, ${address.district}` : ''}{address.city ? `, ${address.city}` : ''}
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+                          {!address.isDefault && <Button size="small" onClick={() => setDefaultAddress(address.id)} sx={{ color: '#fb7185', fontWeight: 900, textTransform: 'none' }}>Đặt làm mặc định</Button>}
+                          <IconButton size="small" onClick={() => openUpdateAddress(address)} sx={{ color: '#f8fafc' }}><EditIcon fontSize="small" /></IconButton>
+                          <IconButton size="small" onClick={() => deleteAddress(address.id)} sx={{ color: '#fb7185' }}><DeleteIcon fontSize="small" /></IconButton>
+                        </Box>
+                      </Box>
                     </Grid>
                   ))}
                 </Grid>
-              </CardContent>
-            </Card>
-
-            {/* Shipping Addresses */}
-            <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3, mb: 3 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>Địa chỉ giao hàng</Typography>
-                  <Button size="small" startIcon={<AddIcon />} onClick={openAddAddress}
-                    sx={{ color: '#1a3de4', fontWeight: 600 }}>
-                    Thêm địa chỉ
-                  </Button>
-                </Box>
-
-                {addresses.length === 0 ? (
-                  <Typography variant="body2" sx={{ color: '#9ca3af', textAlign: 'center', py: 2 }}>
-                    Chưa có địa chỉ nào. Thêm địa chỉ giao hàng đầu tiên của bạn.
-                  </Typography>
-                ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {addresses.map(addr => (
-                      <Box key={addr.id} sx={{
-                        p: 2, border: '1px solid', borderRadius: 2,
-                        borderColor: addr.isDefault ? '#1a3de4' : '#e5e7eb',
-                        bgcolor: addr.isDefault ? '#f0f4ff' : '#fff',
-                      }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                {addr.fullName}
-                              </Typography>
-                              {addr.isDefault && (
-                                <Chip label="Mặc định" size="small" color="primary"
-                                  sx={{ height: 20, fontSize: 10 }} />
-                              )}
-                            </Box>
-                            <Typography variant="body2" sx={{ color: '#6b7280' }}>{addr.phone}</Typography>
-                            <Typography variant="body2" sx={{ color: '#374151' }}>
-                              {addr.street}, {addr.district && `${addr.district}, `}{addr.city}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            {!addr.isDefault && (
-                              <Button size="small" onClick={() => handleSetDefault(addr.id)}
-                                sx={{ fontSize: 11, color: '#1a3de4' }}>
-                                Đặt mặc định
-                              </Button>
-                            )}
-                            <IconButton size="small" onClick={() => openEditAddress(addr)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" onClick={() => handleDeleteAddress(addr.id)}
-                              sx={{ color: '#ef4444' }}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Order History placeholder */}
-            <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>Order History</Typography>
-                  <Button size="small" sx={{ color: '#1a3de4', fontWeight: 600 }}>View All</Button>
-                </Box>
-                {[
-                  { id: 'AM-99210', date: '14/11/2023', items: 2, status: 'DELIVERED', price: '1.240.000₫', color: '#16a34a' },
-                  { id: 'AM-99185', date: '02/11/2023', items: 1, status: 'IN TRANSIT', price: '450.000₫', color: '#d97706' },
-                ].map(order => (
-                  <Box key={order.id} sx={{ display: 'flex', alignItems: 'center', gap: 2,
-                    p: 2, border: '1px solid #f3f4f6', borderRadius: 2, mb: 1.5,
-                    '&:hover': { bgcolor: '#f9fafb', cursor: 'pointer' } }}>
-                    <Box sx={{ width: 44, height: 44, bgcolor: '#f0f4ff', borderRadius: 2,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {order.status === 'DELIVERED'
-                        ? <CheckCircleIcon sx={{ color: '#1a3de4' }} />
-                        : <LocalShippingIcon sx={{ color: '#1a3de4' }} />}
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Order #{order.id}</Typography>
-                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                        {order.date} • {order.items} sản phẩm
-                      </Typography>
-                    </Box>
-                    <Chip label={order.status} size="small"
-                      sx={{ bgcolor: order.color + '20', color: order.color, fontWeight: 700, fontSize: 10 }} />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, minWidth: 90, textAlign: 'right' }}>
-                      {order.price}
-                    </Typography>
-                    <ArrowForwardIosIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
-                  </Box>
-                ))}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* RIGHT COLUMN */}
-          <Grid size={{ xs: 12, md: 4 }}>
-
-            {/* Account Settings */}
-            <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3, mb: 3 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Account Settings</Typography>
-                {[
-                  { icon: <LockIcon />, label: 'Security & Password' },
-                  { icon: <NotificationsIcon />, label: 'Notifications' },
-                  { icon: <CreditCardIcon />, label: 'Payment Methods' },
-                  { icon: <LanguageIcon />, label: 'Preferences' },
-                ].map((item, i) => (
-                  <Box key={i}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5, cursor: 'pointer',
-                      '&:hover': { color: '#1a3de4' } }}>
-                      <Box sx={{ color: '#6b7280' }}>{item.icon}</Box>
-                      <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>{item.label}</Typography>
-                      <ArrowForwardIosIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
-                    </Box>
-                    {i < 3 && <Divider />}
-                  </Box>
-                ))}
-
-                <Button fullWidth variant="contained" size="large" startIcon={<LogoutIcon />}
-                  onClick={onLogout}
-                  sx={{ mt: 3, bgcolor: '#d97706', fontWeight: 700, borderRadius: 2,
-                    '&:hover': { bgcolor: '#b45309' } }}>
-                  Sign Out
-                </Button>
-                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center',
-                  color: '#9ca3af', mt: 1 }}>
-                  Đăng nhập từ Việt Nam
-                </Typography>
-              </CardContent>
-            </Card>
-
-            {/* Need Assistance */}
-            <Card elevation={0} sx={{ borderRadius: 3, bgcolor: '#1a3de4', color: '#fff', overflow: 'hidden' }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Need Assistance?</Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8, mb: 2 }}>
-                  Đội ngũ hỗ trợ của chúng tôi sẵn sàng 24/7 để giúp bạn.
-                </Typography>
-                <Button variant="outlined" size="small"
-                  sx={{ color: '#fff', borderColor: '#fff', fontWeight: 600,
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                  Start Chat
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+              )}
+            </Box>
+          </Box>
+        </Box>
       </Container>
 
-      {/* EDIT PROFILE DIALOG */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Cập nhật thông tin cá nhân</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField label="Họ và tên" fullWidth size="small"
-              value={fullName} onChange={e => setFullName(e.target.value)} />
-            <TextField label="Số điện thoại" fullWidth size="small"
-              value={phone} onChange={e => setPhone(e.target.value)} />
-            <TextField label="Ngày sinh" fullWidth size="small" type="date"
-              value={birthDate} onChange={e => setBirthDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }} />
-            <TextField label="URL Avatar" fullWidth size="small"
-              value={avatar} onChange={e => setAvatar(e.target.value)}
-              placeholder="https://..." />
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { ...panelSx, color: '#f8fafc' } }}>
+        <DialogTitle sx={{ fontWeight: 950 }}>Chỉnh sửa hồ sơ</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '10px !important' }}>
+          <TextField label="Họ và tên" value={fullName} onChange={(event) => setFullName(event.target.value)} sx={inputSx} />
+          <TextField label="Số điện thoại" value={phone} onChange={(event) => setPhone(event.target.value)} sx={inputSx} />
+          <TextField label="Ngày sinh" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} sx={inputSx} slotProps={{ inputLabel: { shrink: true } }} />
+          <Box sx={{ p: 2, border: '1px solid rgba(248,250,252,0.12)', borderRadius: 1 }}>
+            <Typography sx={{ color: '#fff', fontWeight: 950, mb: 1 }}>Ảnh đại diện</Typography>
+            <Button component="label" startIcon={<CloudUploadIcon />} disabled={avatarUploading} sx={{ color: '#fb7185', fontWeight: 900, textTransform: 'none' }}>
+              {avatarUploading ? 'Đang tải ảnh...' : 'Chọn ảnh từ máy'}
+              <input hidden type="file" accept="image/*" onChange={(event) => uploadAvatar(event.target.files?.[0])} />
+            </Button>
+          </Box>
+          <Box sx={{ p: 2, border: '1px solid rgba(248,250,252,0.12)', borderRadius: 1 }}>
+            <Typography sx={{ color: '#fff', fontWeight: 950, mb: 1 }}>Phương thức thanh toán mặc định</Typography>
+            <RadioGroup value={defaultPaymentMethod} onChange={(event) => setDefaultPaymentMethod(event.target.value)}>
+              {paymentMethods.map((method) => (
+                <FormControlLabel
+                  key={method.id}
+                  value={method.id}
+                  control={<Radio sx={{ color: 'rgba(248,250,252,0.35)', '&.Mui-checked': { color: '#f43f5e' } }} />}
+                  label={
+                    <Box>
+                      <Typography sx={{ color: '#fff', fontWeight: 900 }}>{method.label}</Typography>
+                      <Typography sx={{ color: 'rgba(248,250,252,0.5)', fontSize: 12 }}>{method.description}</Typography>
+                    </Box>
+                  }
+                />
+              ))}
+            </RadioGroup>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setEditOpen(false)}>Hủy</Button>
-          <Button variant="contained" onClick={handleSaveProfile}
-            sx={{ bgcolor: '#1a3de4', '&:hover': { bgcolor: '#1530b8' } }}>
-            Lưu thay đổi
-          </Button>
+          <Button onClick={() => setEditOpen(false)} sx={{ color: 'rgba(248,250,252,0.7)', fontWeight: 900 }}>Hủy</Button>
+          <Button onClick={saveProfile} sx={{ color: '#fff', background: 'linear-gradient(135deg, #e11d48, #f97316)', fontWeight: 950 }}>Lưu hồ sơ</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ADD/EDIT ADDRESS DIALOG */}
-      <Dialog open={addrOpen} onClose={() => setAddrOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          {editAddr ? 'Cập nhật địa chỉ' : 'Thêm địa chỉ mới'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField label="Họ tên người nhận" fullWidth size="small"
-              value={addrName} onChange={e => setAddrName(e.target.value)} />
-            <TextField label="Số điện thoại" fullWidth size="small"
-              value={addrPhone} onChange={e => setAddrPhone(e.target.value)} />
-            <TextField label="Địa chỉ cụ thể (số nhà, tên đường)" fullWidth size="small"
-              value={addrStreet} onChange={e => setAddrStreet(e.target.value)} />
-            <TextField label="Quận/Huyện" fullWidth size="small"
-              value={addrDistrict} onChange={e => setAddrDistrict(e.target.value)} />
-            <TextField label="Tỉnh/Thành phố" fullWidth size="small"
-              value={addrCity} onChange={e => setAddrCity(e.target.value)} />
-          </Box>
+      <Dialog open={addressOpen} onClose={() => setAddressOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { ...panelSx, color: '#f8fafc' } }}>
+        <DialogTitle sx={{ fontWeight: 950 }}>{editAddress ? 'Sửa địa chỉ nhận hàng' : 'Thêm địa chỉ nhận hàng'}</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: '10px !important' }}>
+          <TextField label="Tên người nhận" value={addressName} onChange={(event) => setAddressName(event.target.value)} sx={inputSx} />
+          <TextField label="Số điện thoại" value={addressPhone} onChange={(event) => setAddressPhone(event.target.value)} sx={inputSx} />
+          <TextField label="Địa chỉ" value={addressStreet} onChange={(event) => setAddressStreet(event.target.value)} sx={inputSx} />
+          <TextField label="Quận/Huyện" value={addressDistrict} onChange={(event) => setAddressDistrict(event.target.value)} sx={inputSx} />
+          <TextField label="Thành phố / Tỉnh" value={addressCity} onChange={(event) => setAddressCity(event.target.value)} sx={inputSx} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setAddrOpen(false)}>Hủy</Button>
-          <Button variant="contained" onClick={handleSaveAddress}
-            sx={{ bgcolor: '#1a3de4', '&:hover': { bgcolor: '#1530b8' } }}>
-            {editAddr ? 'Cập nhật' : 'Thêm địa chỉ'}
+          <Button onClick={() => setAddressOpen(false)} sx={{ color: 'rgba(248,250,252,0.7)', fontWeight: 900 }}>Hủy</Button>
+          <Button onClick={saveAddress} sx={{ color: '#fff', background: 'linear-gradient(135deg, #e11d48, #f97316)', fontWeight: 950 }}>
+            {editAddress ? 'Lưu địa chỉ' : 'Thêm địa chỉ'}
           </Button>
         </DialogActions>
       </Dialog>
-
     </Box>
   )
 }
