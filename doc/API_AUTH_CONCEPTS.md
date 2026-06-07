@@ -39,7 +39,7 @@ Hệ thống bảo mật thường chia làm 2 giai đoạn chính:
 
 Kiểm tra xem người đang truy cập có đúng là người họ khai báo hay không.
 
-* **Phương thức:** Login bằng mật khẩu, OTP, sinh trắc học, Social Login (Google/FB).
+* **Phương thức:** Login bằng mật khẩu, OTP, sinh trắc học, Social Login (Google).
 * **Kết quả:** Nếu đúng, hệ thống cấp cho bạn một "tấm vé" (thường là **JWT Token**).
 
 ### 2. Authorization (Phân quyền - Bạn được làm gì?)

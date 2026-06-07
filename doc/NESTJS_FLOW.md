@@ -5,21 +5,23 @@ Tài liệu này dành cho các thành viên trong Team để nắm bắt luồn
 ---
 
 ## 1. Cấu trúc Thư mục (Rã Module)
-Dự án được tổ chức theo từng Module chức năng. Mỗi thành viên khi nhận một tính năng mới sẽ tạo một thư mục riêng trong `src/`.
+Dự án backend được tổ chức theo nhiều NestJS application/service. Mỗi service có source root riêng, không tạo module mới vào `src/` chung nữa.
 
 **Ví dụ cấu trúc chuẩn:**
 ```text
-src/
-├── auth/               # Module bảo mật
-├── users/              # Module quản lý người dùng
-├── <feature_name>/     # Module tính năng mới của bạn
-│   ├── dto/            # Nơi định nghĩa dữ liệu đầu vào (Input)
-│   ├── entities/       # Nơi định nghĩa cấu trúc bảng DB
-│   ├── <name>.controller.ts
-│   ├── <name>.service.ts
-│   └── <name>.module.ts
-└── app.module.ts       # Nơi kết nối tất cả module con
+backend/
+├── src-auth-users/     # Auth + Users Service
+├── src-products/       # Products + Brands Service
+├── src-categories/     # Categories Service
+├── src-cart/           # Cart Service
+├── src-orders/         # Orders Service
+├── src-gateway/        # API Gateway
+├── src-payments/       # Payments Service
+├── src-notifications/  # Notifications Service
+└── nest-cli.json       # Khai báo các Nest application trong monorepo
 ```
+
+Khi thêm tính năng mới, hãy đặt nó vào service sở hữu nghiệp vụ đó. Ví dụ tính năng liên quan giỏ hàng đặt trong `src-cart/src/cart`, còn tính năng liên quan đơn hàng đặt trong `src-orders/src/orders`.
 
 ---
 
@@ -40,8 +42,7 @@ graph LR
 ## 3. Quy trình 4 Bước để viết một API mới
 
 ### Bước 1: Tạo Module & Đăng ký
-Sử dụng lệnh: `nest g mo <tên_module>`. 
-*Module này phải được khai báo trong `imports` của `AppModule`.*
+Sử dụng lệnh theo service tương ứng hoặc tạo thủ công trong đúng source root. Module phải được khai báo trong `imports` của `AppModule` của service đó.
 
 ### Bước 2: Định nghĩa Entity (Database)
 Tạo file trong thư mục `entities/`. Đây là nơi bạn thiết kế bảng. 

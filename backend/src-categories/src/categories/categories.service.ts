@@ -13,6 +13,7 @@ import { Category } from '../entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -34,7 +35,27 @@ export class CategoriesService {
     @InjectRepository(Category)
     private categoriesRepository: Repository<Category>,
     private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private async logAuditAction(
+    action: string,
+    details: string,
+    user?: { userId: number; email: string } | null,
+    ip: string = 'internal',
+  ): Promise<void> {
+    try {
+      const ordersServiceUrl = this.configService.get<string>('ORDERS_SERVICE_URL') || 'http://localhost:3003';
+      const internalServiceKey = this.configService.get<string>('INTERNAL_SERVICE_KEY') || 'local-dev-internal-key';
+      await this.httpService.axiosRef.post(
+        `${ordersServiceUrl}/settings/audit-logs/internal`,
+        { user, action, details, ip, type: 'ADMIN' },
+        { headers: { 'x-internal-service-key': internalServiceKey } },
+      );
+    } catch (err) {
+      console.warn('Failed to log category audit action:', err.message);
+    }
+  }
 
   async findAll(): Promise<Category[]> {
     return this.categoriesRepository.find({
@@ -67,23 +88,49 @@ export class CategoriesService {
     return category;
   }
 
-  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+  async create(
+    createCategoryDto: CreateCategoryDto,
+    adminUser?: { userId: number; email: string } | null,
+    clientIp: string = 'internal',
+  ): Promise<Category> {
     const newCategory = this.categoriesRepository.create(createCategoryDto);
-    return this.categoriesRepository.save(newCategory);
+    const saved = await this.categoriesRepository.save(newCategory);
+
+    // Log audit action
+    const details = `Đã tạo danh mục mới: ${saved.name} (Slug: ${saved.slug || 'N/A'}).`;
+    await this.logAuditAction('Thêm danh mục', details, adminUser, clientIp);
+
+    return saved;
   }
 
   async update(
     id: number,
     updateCategoryDto: UpdateCategoryDto,
+    adminUser?: { userId: number; email: string } | null,
+    clientIp: string = 'internal',
   ): Promise<Category> {
     const category = await this.findOne(id);
     Object.assign(category, updateCategoryDto);
-    return this.categoriesRepository.save(category);
+    const saved = await this.categoriesRepository.save(category);
+
+    // Log audit action
+    const details = `Đã cập nhật danh mục #${id} (${saved.name}).`;
+    await this.logAuditAction('Cập nhật danh mục', details, adminUser, clientIp);
+
+    return saved;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(
+    id: number,
+    adminUser?: { userId: number; email: string } | null,
+    clientIp: string = 'internal',
+  ): Promise<void> {
     const category = await this.findOne(id);
     await this.categoriesRepository.remove(category);
+
+    // Log audit action
+    const details = `Đã xóa danh mục #${id} (${category.name}).`;
+    await this.logAuditAction('Xóa danh mục', details, adminUser, clientIp);
   }
 
   /**

@@ -23,6 +23,7 @@ export enum SortBy {
 
 export class ProductQueryDto {
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   search?: string;
 
@@ -33,14 +34,17 @@ export class ProductQueryDto {
   categoryId?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   brand?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   color?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   size?: string;
 

@@ -13,7 +13,11 @@ import {
   Put,
   Delete,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
+import { Roles } from '../../../src-shared/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../../src-shared/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../src-shared/guards/roles.guard';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
@@ -38,11 +42,15 @@ export class BrandsController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   create(@Body() createBrandDto: CreateBrandDto) {
     return this.brandsService.create(createBrandDto);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBrandDto: UpdateBrandDto,
@@ -51,6 +59,8 @@ export class BrandsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.brandsService.remove(id);
   }

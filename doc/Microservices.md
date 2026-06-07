@@ -1,92 +1,45 @@
----
-description: 
----
+# DALTA Backend Services
 
-# Kiến thức cơ bản về API, API Gateway, Microservice, Controller & Service
+Current local service split:
 
-Khi xây dựng một hệ thống theo hướng **Microservices**, việc phân chia trách nhiệm (Separation of Concerns) là cực kỳ quan trọng để hệ thống dễ bảo trì và mở rộng.
+| Service | Port | Source | Command |
+| --- | ---: | --- | --- |
+| Auth + Users | 3000 | `src-auth-users` | `npm.cmd run start:dev` |
+| Products | 3001 | `src-products` | `npm.cmd run start:products:dev` |
+| Categories | 3002 | `src-categories` | `npm.cmd run start:categories:dev` |
+| Orders | 3003 | `src-orders` | `npm.cmd run start:orders:dev` |
+| Cart | 3004 | `src-cart` | `npm.cmd run start:cart:dev` |
+| API Gateway | 3005 | `src-gateway` | `npm.cmd run start:gateway:dev` |
+| Payments | 3006 | `src-payments` | `npm.cmd run start:payments:dev` |
+| Notifications | 3007 | `src-notifications` | `npm.cmd run start:notifications:dev` |
 
----
+Frontend calls API Gateway by default:
 
-## 1. Phân biệt các thành phần chính
+| Domain | Default URL | Env override |
+| --- | --- | --- |
+| All frontend API calls | `http://localhost:3005` | `VITE_API_BASE_URL` |
 
-### 🌐 API Gateway (Cổng nối tiếp duy nhất)
+Gateway routes:
 
-Đóng vai trò là cửa ngõ duy nhất của toàn bộ hệ thống. Thay vì Client gọi trực tiếp vào hàng chục microservices khác nhau, nó chỉ gọi vào một địa chỉ duy nhất (Gateway).
+| Path | Target |
+| --- | --- |
+| `/auth`, `/users` | `AUTH_USERS_SERVICE_URL` or `http://localhost:3000` |
+| `/products`, `/brands`, `/wishlist` | `PRODUCTS_SERVICE_URL` or `http://localhost:3001` |
+| `/categories` | `CATEGORIES_SERVICE_URL` or `http://localhost:3002` |
+| `/orders` | `ORDERS_SERVICE_URL` or `http://localhost:3003` |
+| `/cart` | `CART_SERVICE_URL` or `http://localhost:3004` |
+| `/payments` | `PAYMENTS_SERVICE_URL` or `http://localhost:3006` |
+| `/notifications` | `NOTIFICATIONS_SERVICE_URL` or `http://localhost:3007` |
 
-- **Nhiệm vụ chính**:
-  - **Routing**: Định tuyến request (Nếu gọi `/products`, Gateway sẽ chuyển đến Product Service).
-  - **Security**: Xác thực (Authentication), phân quyền (Authorization) tập trung tại một nơi.
-  - **Load Balancing**: Phân phối tải giữa các bản sao của service.
-  - **Rate Limiting**: Chặn các request spam hoặc quá giới hạn.
+The services intentionally share one MySQL database for simpler demo setup. API Gateway performs a lightweight JWT check before proxying protected customer routes such as `/cart`, `/orders`, `/users/profile`, `/users/addresses`, and `/wishlist`. Admin-only CRUD endpoints for products, brands, and categories are enforced inside their owning services with JWT + role guards. Gateway logs each proxied request with method, URL, target service, status code, and duration.
 
-### 🔌 API (Application Programming Interface)
+Product Service also exposes simple Epic 6 backend APIs:
 
-Là tập hợp các quy tắc và định dạng để các hành phần phần mềm giao tiếp với nhau. Trong Microservices, API thường là **REST**, **gRPC** hoặc qua **Message Brokers** (như RabbitMQ).
+| Feature | Endpoint |
+| --- | --- |
+| Product reviews | `GET /products/:productId/reviews`, `POST /products/:productId/reviews` |
+| Wishlist | `GET /wishlist`, `POST /wishlist/:productId`, `DELETE /wishlist/:productId` |
 
-### 🏗️ Microservice
+Internal service calls use `INTERNAL_SERVICE_KEY` for service-to-service endpoints. Orders calls Cart, Users, and Payments over HTTP. Payments handles Stripe checkout/webhook and notifies Orders through an internal endpoint. Auth + Users creates reset tokens, then calls Notifications to send reset-password email.
 
-Là một service nhỏ, độc lập, thực hiện một chức năng nghiệp vụ riêng biệt (ví dụ: Service quản lý Sản phẩm, Service quản lý Đơn hàng). Mỗi service nên có database riêng.
-
-### 🛂 Controller (Người điều hướng)
-
-Lớp nhận request đầu tiên bên trong một Microservice.
-
-- **Nhiệm vụ**: Thường nằm ở tầng biên của một module/service.
-- **Trách nhiệm**:
-  - Tiếp nhận yêu cầu từ Gateway hoặc Client.
-  - Kiểm tra dữ liệu đầu vào (Validation/DTO).
-  - Gọi đến lớp xử lý nghiệp vụ (Service).
-  - Trả về kết quả cho phía gọi.
-- **Nguyên tắc**: Không chứa logic nghiệp vụ phức tạp. Chỉ được làm "lễ tân".
-
-### ⚙️ Service (Tầng xử lý Nghiệp vụ)
-
-Nơi chứa toàn bộ trí tuệ và logic của ứng dụng.
-
-- **Trách nhiệm**:
-  - Tính toán, xử lý dữ liệu.
-  - Thực hiện các quy tắc kinh doanh (Business Rules).
-  - Tương tác với cơ sở dữ liệu (thông qua Repository/Entity).
-- **Quy tắc vàng**: Code trong Service phải sạch, không phụ thuộc vào việc request đến từ API hay từ một task chạy ngầm (Cron job).
-
----
-
-## 2. Luồng dữ liệu (Step-by-step)
-
-1. **Client (Web/Mobile)** gửi request (vd: `GET /products/1`).
-2. **API Gateway** tiếp nhận: Kiểm tra token (hợp lệ không?), sau đó tìm xem `/products` thuộc service nào.
-3. **Product Microservice** nhận request tại **Controller**.
-4. **Controller** kiểm tra: ID có phải là số không? Nếu ổn, gọi `ProductService.getById(id)`.
-5. **Service** xử lý: Tìm trong DB, tính toán khuyến mãi nếu có, sau đó trả về dữ liệu.
-6. **Controller** nhận kết quả, đóng gói vào JSON và trả về **Gateway**.
-7. **Gateway** trả về cho **Client**.
-
----
-
-## 3. Hướng dẫn Rã Module (Decomposition Guide)
-
-Khi bạn muốn tách một module to thành các microservices nhỏ, hãy làm theo các bước:
-
-### Phần nào "Port" vào đâu?
-
-| Nếu là...                                      | Chuyển vào đâu?                                   | Vì sao?                                                                                                                 |
-| :----------------------------------------------- | :---------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| **Routes, `@Get`, `@Post`**            | **Port vào Controller**                        | Đây là điểm tiếp xúc của module với thế giới bên ngoài.                                                     |
-| **Logic tính tiền, Logic lưu kho**      | **Port vào Service**                           | Đây là lõi nghiệp vụ, cần độc lập để dễ test.                                                               |
-| **Kết nối Database, Entity**             | **Port vào Database riêng của Service đó** | Đảm bảo tính độc lập dữ liệu (Encapsulation).                                                                   |
-| **Cấu hình Security (JWT, Admin check)** | **Port vào API Gateway**                       | Để các Microservice bên trong không phải lo lắng về việc ai đang gọi nó (Trừ khi cần kiểm tra sâu hơn). |
-
-### Chiến thuật "Cái gì thuộc về cái gì?"
-
-- **Service** chỉ gọi **Service** cùng một Microservice.
-- Nếu cần dữ liệu từ Microservice khác: **Gọi qua API** hoặc **Lắng nghe sự kiện (Events)** từ Microservice đó. Không bao giờ query trực tiếp chéo database.
-
----
-
-**Tóm lại:**
-
-- **Gateway**: Người gác cổng.
-- **Controller**: Lễ tân (biết ai đến, cần gặp ai).
-- **Service**: Nhân viên kỹ thuật (làm việc chính).
-- **Microservices**: Các tòa nhà độc lập trong một khu đô thị (Hệ thống).
+Remaining production cleanup: split database ownership if production-level isolation is required, and replace internal HTTP calls with a broker such as RabbitMQ/Kafka if asynchronous event processing is required.

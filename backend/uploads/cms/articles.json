@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "title": "Sợi carbon autoclave và độ cứng cấu trúc",
+    "subtitle": "Quy trình ép nhiệt carbon prepreg cho phụ tùng hiệu năng cao.",
+    "category": "Vật liệu",
+    "readTime": "6 phút đọc",
+    "date": "24/05/2026",
+    "author": "AEROTEC Lab",
+    "image": "/images/cars/apex-r7.png",
+    "synopsis": "Phân tích cách áp suất lò hấp và chu kỳ làm nguội ảnh hưởng tới độ cứng của phụ tùng carbon.",
+    "content": "Quy trình autoclave giúp kiểm soát áp suất, nhiệt độ và lượng nhựa epoxy trong từng lớp carbon. Với phụ tùng khí động học, độ ổn định hình học quan trọng không kém trọng lượng thấp.",
+    "isPublished": true,
+    "createdAt": "2026-06-07T06:18:40.651Z",
+    "updatedAt": "2026-06-07T06:18:40.651Z"
+  },
+  {
+    "id": 2,
+    "title": "ECU thông minh và telemetry người lái",
+    "subtitle": "Tối ưu bản đồ động cơ dựa trên dữ liệu phản hồi thời gian thực.",
+    "category": "Điện tử",
+    "readTime": "8 phút đọc",
+    "date": "18/04/2026",
+    "author": "AEROTEC Engineering",
+    "image": "/images/cars/nova-x.png",
+    "synopsis": "Cách các cảm biến telemetry giúp ECU điều chỉnh lực kéo, phản hồi ga và ổn định thân xe.",
+    "content": "ECU hiệu năng cao không chỉ tăng công suất. Nó cần phối hợp giữa bướm ga, đánh lửa, mô-men và độ bám để xe dễ kiểm soát hơn trong điều kiện đường đua.",
+    "isPublished": true,
+    "createdAt": "2026-06-07T06:18:40.651Z",
+    "updatedAt": "2026-06-07T06:18:40.651Z"
+  }
+]

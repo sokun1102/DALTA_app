@@ -1,0 +1,34 @@
+{
+  "heroTitle": "PHỤ TÙNG\\nHIỆU NĂNG",
+  "heroSubtitle": "CẤU HÌNH RACING SPEC ĐÃ HIỆU CHUẨN",
+  "heroText": "Bộ phụ tùng khí động học carbon ép, hệ thống xả hợp kim titanium và các linh kiện điều khiển lập trình nơ-ron được thiết kế cho đua xe chính xác.",
+  "heroImage": "",
+  "partnerBremboDesc": "HỆ THỐNG PHANH ĐUA // HEO DẦU NGUYÊN KHỐI",
+  "partnerMichelinDesc": "LỐP ĐUA CHUYÊN DỤNG // LỰC BÁM ĐƯỜNG ĐUA 1.88G",
+  "partnerOhlinsDesc": "GIẢM CHẤN VAN THÍCH ỨNG // DẦU THỦY LỰC CHỦ ĐỘNG",
+  "partnerRecaroDesc": "KHUNG GHẾ KEVLAR NGUYÊN KHỐI // CĂNG ĐAI SINH HỌC",
+  "partnerAlcantaraDesc": "BỌC ALCANTARA SIÊU BÁM // BỀ MẶT CHỐNG TĨNH ĐIỆN",
+  "featuredProductIds": [
+    26,
+    23,
+    24
+  ],
+  "materialFilters": [
+    {
+      "label": "Carbon Fiber",
+      "key": "carbon"
+    },
+    {
+      "label": "Titanium",
+      "key": "titan"
+    },
+    {
+      "label": "Nhôm CNC",
+      "key": "nhôm"
+    },
+    {
+      "label": "Carbon Ceramic",
+      "key": "gốm"
+    }
+  ]
+}

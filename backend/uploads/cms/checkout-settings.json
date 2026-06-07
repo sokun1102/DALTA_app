@@ -1,0 +1,19 @@
+{
+  "paymentMethods": {
+    "cod": true,
+    "card": true,
+    "bank_transfer": true
+  },
+  "shippingFees": {
+    "standard": 30000,
+    "express": 60000
+  },
+  "taxRate": 0.08,
+  "bankTransfer": {
+    "bankName": "BIDV",
+    "bankFullName": "Ngân hàng TMCP Đầu tư & Phát triển Việt Nam",
+    "bankBin": "970418",
+    "accountNumber": "1303108973",
+    "accountName": "DANG NHUT TRUONG"
+  }
+}

@@ -6,12 +6,21 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtStrategy } from './auth/strategies/jwt.strategy';
+import { Brand } from './entities/brand.entity';
+import { Category } from './entities/category.entity';
+import { ProductImage } from './entities/product-image.entity';
+import { ProductReview } from './entities/product-review.entity';
+import { Product } from './entities/product.entity';
+import { WishlistItem } from './entities/wishlist-item.entity';
 import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,11 +31,12 @@ import { ProductsModule } from './products/products.module';
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
+        entities: [Product, ProductImage, Brand, Category, ProductReview, WishlistItem],
+        synchronize: false,
       }),
     }),
     ProductsModule,
   ],
+  providers: [JwtStrategy],
 })
 export class AppModule {}

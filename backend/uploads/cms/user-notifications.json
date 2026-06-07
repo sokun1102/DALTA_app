@@ -1,0 +1,32 @@
+[
+  {
+    "id": "notif_1780816802569_me00p3yv3",
+    "userId": 2,
+    "title": "Đặt hàng thành công",
+    "message": "Đơn hàng #DLT-MQ3GCCSG của bạn đã được ghi nhận thành công. Trạng thái: PENDING.",
+    "type": "order",
+    "actionUrl": "/orders",
+    "isRead": true,
+    "createdAt": "2026-06-07T07:20:02.569Z"
+  },
+  {
+    "id": "notif_1780817293868_d6upb69uq",
+    "userId": 8,
+    "title": "Đặt hàng thành công",
+    "message": "Đơn hàng #DLT-MQ3GMVVO của bạn đã được ghi nhận thành công. Trạng thái: PENDING.",
+    "type": "order",
+    "actionUrl": "/orders",
+    "isRead": true,
+    "createdAt": "2026-06-07T07:28:13.868Z"
+  },
+  {
+    "id": "notif_1780817790016_k633giond",
+    "userId": 8,
+    "title": "Đặt hàng thành công",
+    "message": "Đơn hàng #DLT-MQ3GXI4U của bạn đã được ghi nhận thành công. Trạng thái: PENDING.",
+    "type": "order",
+    "actionUrl": "/orders",
+    "isRead": true,
+    "createdAt": "2026-06-07T07:36:30.016Z"
+  }
+]

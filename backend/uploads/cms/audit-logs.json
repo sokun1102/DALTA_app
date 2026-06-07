@@ -1,0 +1,102 @@
+[
+  {
+    "id": "log_1780816802576_u65gp",
+    "userId": 2,
+    "userEmail": "ngophongnguyn2004@gmail.com",
+    "action": "Đặt hàng mới",
+    "details": "Khách hàng đặt đơn hàng #DLT-MQ3GCCSG trị giá 259.260.000 VND qua hình thức cod.",
+    "ip": "N/A",
+    "timestamp": "2026-06-07T07:20:02.576Z"
+  },
+  {
+    "id": "log_1780817293870_zkrz2",
+    "userId": 8,
+    "userEmail": "1234@gmail.com",
+    "action": "Đặt hàng mới",
+    "details": "Khách hàng đặt đơn hàng #DLT-MQ3GMVVO trị giá 198.750.000 VND qua hình thức cod.",
+    "ip": "N/A",
+    "timestamp": "2026-06-07T07:28:13.870Z"
+  },
+  {
+    "id": "log_1780817701766_j2j66",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-283913 thành: Đã giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:01.766Z"
+  },
+  {
+    "id": "log_1780817703199_np3td",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-480145 thành: Đã giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:03.199Z"
+  },
+  {
+    "id": "log_1780817703724_ae8wj",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-283913 thành: Chưa giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:03.724Z"
+  },
+  {
+    "id": "log_1780817704594_mmhdl",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-283913 thành: Đã giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:04.594Z"
+  },
+  {
+    "id": "log_1780817706492_rdybt",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-283913 thành: Chưa giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:06.492Z"
+  },
+  {
+    "id": "log_1780817707017_9pvy2",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-480145 thành: Chưa giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:07.017Z"
+  },
+  {
+    "id": "log_1780817708049_226ax",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-283913 thành: Đã giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:08.049Z"
+  },
+  {
+    "id": "log_1780817708638_w96ev",
+    "userId": 1,
+    "userEmail": "admin@mail.com",
+    "action": "Cập nhật ticket hỗ trợ",
+    "details": "Đã chuyển trạng thái yêu cầu hỗ trợ #TKT-480145 thành: Đã giải quyết.",
+    "ip": "::1",
+    "timestamp": "2026-06-07T07:35:08.639Z"
+  },
+  {
+    "id": "log_1780817790022_0lyj1",
+    "userId": 8,
+    "userEmail": "1234@gmail.com",
+    "action": "Đặt hàng mới",
+    "details": "Khách hàng đặt đơn hàng #DLT-MQ3GXI4U trị giá 129.660.000 VND qua hình thức cod.",
+    "ip": "N/A",
+    "type": "SYSTEM",
+    "timestamp": "2026-06-07T07:36:30.022Z"
+  }
+]

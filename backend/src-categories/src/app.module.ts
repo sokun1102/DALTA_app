@@ -6,12 +6,16 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { CategoriesModule } from './categories/categories.module';
+import { Category } from './entities/category.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,11 +26,12 @@ import { CategoriesModule } from './categories/categories.module';
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
+        entities: [Category],
+        synchronize: false,
       }),
     }),
     CategoriesModule,
   ],
+  providers: [JwtStrategy],
 })
 export class AppModule {}

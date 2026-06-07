@@ -36,6 +36,9 @@ services:
       - GOOGLE_CLIENT_ID=your-google-client-id
       - GOOGLE_CLIENT_SECRET=your-google-client-secret
       - GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+      - FRONTEND_URL=http://localhost
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     depends_on:
       - db
 

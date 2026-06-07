@@ -4,11 +4,21 @@
  * =====================================================
  */
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not as TypeOrmNot } from 'typeorm';
-import { Product } from './entities/product.entity';
-import { ProductImage } from './entities/product-image.entity';
+import { Product } from '../entities/product.entity';
+import { ProductImage } from '../entities/product-image.entity';
+import { ProductReview } from '../entities/product-review.entity';
+import { WishlistItem } from '../entities/wishlist-item.entity';
+import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto, SortBy, SortOrder } from './dto/product-query.dto';
@@ -23,12 +33,26 @@ export interface PaginatedResult<T> {
 
 @Injectable()
 export class ProductsService {
+  private readonly ordersServiceUrl: string;
+  private readonly internalServiceKey: string;
+
   constructor(
     @InjectRepository(Product)
     private productsRepository: Repository<Product>,
     @InjectRepository(ProductImage)
     private productImagesRepository: Repository<ProductImage>,
-  ) {}
+    @InjectRepository(ProductReview)
+    private reviewsRepository: Repository<ProductReview>,
+    @InjectRepository(WishlistItem)
+    private wishlistRepository: Repository<WishlistItem>,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.ordersServiceUrl =
+      this.configService.get<string>('ORDERS_SERVICE_URL') || 'http://localhost:3003';
+    this.internalServiceKey =
+      this.configService.get<string>('INTERNAL_SERVICE_KEY') || 'local-dev-internal-key';
+  }
 
   async findAll(query: ProductQueryDto): Promise<PaginatedResult<Product>> {
     const {
@@ -152,7 +176,11 @@ export class ProductsService {
     return product;
   }
 
-  async create(createProductDto: CreateProductDto): Promise<Product> {
+  async create(
+    createProductDto: CreateProductDto,
+    adminUser?: { userId: number; email: string } | null,
+    clientIp: string = 'internal',
+  ): Promise<Product> {
     const { images, categoryId, ...productData } = createProductDto;
 
     const product = this.productsRepository.create({
@@ -174,10 +202,19 @@ export class ProductsService {
       await this.productImagesRepository.save(productImages);
     }
 
+    // Log audit action
+    const details = `Đã tạo sản phẩm mới: ${savedProduct.name} (SKU: ${savedProduct.sku || 'N/A'}, Giá: ${savedProduct.price}đ).`;
+    await this.logAuditAction('Thêm sản phẩm', details, adminUser, clientIp);
+
     return this.findOne(savedProduct.id);
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+    adminUser?: { userId: number; email: string } | null,
+    clientIp: string = 'internal',
+  ): Promise<Product> {
     const product = await this.findOne(id);
     const { images, categoryId, ...updateData } = updateProductDto;
 
@@ -186,7 +223,7 @@ export class ProductsService {
       ...(categoryId !== undefined && { categoryId }),
     });
 
-    await this.productsRepository.save(product);
+    const saved = await this.productsRepository.save(product);
 
     if (images) {
       await this.productImagesRepository.delete({ productId: id });
@@ -204,12 +241,24 @@ export class ProductsService {
       }
     }
 
+    // Log audit action
+    const details = `Đã cập nhật thông tin sản phẩm #${id} (${saved.name}).`;
+    await this.logAuditAction('Cập nhật sản phẩm', details, adminUser, clientIp);
+
     return this.findOne(id);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(
+    id: number,
+    adminUser?: { userId: number; email: string } | null,
+    clientIp: string = 'internal',
+  ): Promise<void> {
     const product = await this.findOne(id);
     await this.productsRepository.remove(product);
+
+    // Log audit action
+    const details = `Đã xóa sản phẩm #${id} (${product.name}).`;
+    await this.logAuditAction('Xóa sản phẩm', details, adminUser, clientIp);
   }
 
   async findByCategory(
@@ -371,5 +420,172 @@ export class ProductsService {
       min: result?.minPrice || 0,
       max: result?.maxPrice || 1000000,
     };
+  }
+
+  async findReviews(productId: number): Promise<ProductReview[]> {
+    await this.findOne(productId);
+    return this.reviewsRepository.find({
+      where: { productId, isVisible: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findAllReviewsForAdmin(): Promise<ProductReview[]> {
+    return this.reviewsRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async createReview(
+    productId: number,
+    user: { userId: number; email?: string },
+    dto: CreateReviewDto,
+  ): Promise<ProductReview> {
+    await this.findOne(productId);
+    await this.ensureUserCanReviewProduct(user.userId, productId);
+
+    const review = await this.reviewsRepository.save(
+      this.reviewsRepository.create({
+        productId,
+        userId: user.userId,
+        userEmail: user.email || null,
+        rating: dto.rating,
+        comment: dto.comment?.trim() || null,
+      }),
+    );
+
+    await this.refreshProductRating(productId);
+    return review;
+  }
+
+  async updateReviewVisibility(id: number, isVisible: boolean): Promise<ProductReview> {
+    const review = await this.reviewsRepository.findOne({ where: { id } });
+    if (!review) throw new NotFoundException('Review not found');
+
+    review.isVisible = isVisible;
+    const savedReview = await this.reviewsRepository.save(review);
+    await this.refreshProductRating(savedReview.productId);
+    return savedReview;
+  }
+
+  async removeReview(id: number): Promise<{ deleted: true }> {
+    const review = await this.reviewsRepository.findOne({ where: { id } });
+    if (!review) throw new NotFoundException('Review not found');
+
+    await this.reviewsRepository.remove(review);
+    await this.refreshProductRating(review.productId);
+    return { deleted: true };
+  }
+
+  async addProductImage(productId: number, imageUrl: string): Promise<Product> {
+    const product = await this.findOne(productId);
+    await this.productImagesRepository.update({ productId }, { isPrimary: false });
+    await this.productImagesRepository.save(
+      this.productImagesRepository.create({
+        productId,
+        url: imageUrl,
+        isPrimary: true,
+        displayOrder: 0,
+        altText: product.name,
+      }),
+    );
+    return this.findOne(productId);
+  }
+
+  private async ensureUserCanReviewProduct(
+    userId: number,
+    productId: number,
+  ): Promise<void> {
+    try {
+      const response = await this.httpService.axiosRef.get<{ eligible: boolean }>(
+        `${this.ordersServiceUrl}/orders/internal/users/${userId}/products/${productId}/delivered`,
+        {
+          headers: { 'x-internal-service-key': this.internalServiceKey },
+        },
+      );
+
+      if (!response.data?.eligible) {
+        throw new BadRequestException(
+          'Chỉ có thể đánh giá sản phẩm trong đơn hàng đã giao thành công.',
+        );
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      if (error?.response?.status === 400) {
+        throw new BadRequestException(
+          error.response.data?.message ||
+            'Chỉ có thể đánh giá sản phẩm trong đơn hàng đã giao thành công.',
+        );
+      }
+
+      throw new ServiceUnavailableException('Orders Service is unavailable');
+    }
+  }
+
+  async findWishlist(userId: number) {
+    const items = await this.wishlistRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+    const productIds = items.map((item) => item.productId);
+    if (productIds.length === 0) return [];
+
+    return this.productsRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.images', 'images')
+      .where('product.id IN (:...productIds)', { productIds })
+      .getMany();
+  }
+
+  async addToWishlist(userId: number, productId: number): Promise<WishlistItem> {
+    await this.findOne(productId);
+
+    const existing = await this.wishlistRepository.findOne({
+      where: { userId, productId },
+    });
+    if (existing) return existing;
+
+    return this.wishlistRepository.save(
+      this.wishlistRepository.create({ userId, productId }),
+    );
+  }
+
+  async removeFromWishlist(userId: number, productId: number): Promise<void> {
+    await this.wishlistRepository.delete({ userId, productId });
+  }
+
+  private async refreshProductRating(productId: number): Promise<void> {
+    const result = await this.reviewsRepository
+      .createQueryBuilder('review')
+      .select('AVG(review.rating)', 'avgRating')
+      .addSelect('COUNT(review.id)', 'reviewCount')
+      .where('review.productId = :productId', { productId })
+      .andWhere('review.isVisible = :isVisible', { isVisible: true })
+      .getRawOne();
+
+    await this.productsRepository.update(productId, {
+      rating: Number(Number(result?.avgRating || 0).toFixed(1)),
+      reviewCount: Number(result?.reviewCount || 0),
+    });
+  }
+
+  private async logAuditAction(
+    action: string,
+    details: string,
+    user?: { userId: number; email: string } | null,
+    ip: string = 'internal',
+  ): Promise<void> {
+    try {
+      await this.httpService.axiosRef.post(
+        `${this.ordersServiceUrl}/settings/audit-logs/internal`,
+        { user, action, details, ip, type: 'ADMIN' },
+        { headers: { 'x-internal-service-key': this.internalServiceKey } },
+      );
+    } catch (err) {
+      console.warn('Failed to log product audit action:', err.message);
+    }
   }
 }

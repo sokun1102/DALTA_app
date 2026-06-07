@@ -19,7 +19,7 @@ async function bootstrap() {
     transform: true,
   }));
 
-  const port = process.env.PORT || 3002;
+  const port = process.env.CATEGORIES_PORT || 3002;
   await app.listen(port);
   console.log(`Categories Service running on port ${port}`);
 }

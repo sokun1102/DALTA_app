@@ -26,10 +26,10 @@ export class Product {
   @Column()
   name: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 14, scale: 2 })
   price: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 14, scale: 2, nullable: true })
   originalPrice: number;
 
   @Column({ type: 'text', nullable: true })
