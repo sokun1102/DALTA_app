@@ -1,75 +1,113 @@
 import { useState } from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import InputAdornment from '@mui/material/InputAdornment'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import EmailIcon from '@mui/icons-material/EmailOutlined'
+import AccountShell from './AccountShell'
+import { apiFetch } from '../services/apiClient'
 
-export default function ForgotPasswordPage({ onGoLogin }) {
-  const [email, setEmail]     = useState('')
+const fieldSx = {
+  mb: 2,
+  '& .MuiOutlinedInput-root': {
+    color: '#f8fafc',
+    borderRadius: 1,
+    background: 'rgba(5,5,5,0.52)',
+    '& fieldset': { borderColor: 'rgba(248,250,252,0.16)' },
+    '&:hover fieldset': { borderColor: 'rgba(244,63,94,0.46)' },
+    '&.Mui-focused fieldset': { borderColor: '#f43f5e' },
+  },
+  '& .MuiInputBase-input::placeholder': { color: 'rgba(248,250,252,0.38)', opacity: 1 },
+}
+
+export default function ForgotPasswordPage({ onGoLogin, onGoHome }) {
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent, setSent]       = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
   const handleSubmit = async () => {
-    if (!email) { alert('Vui lòng nhập email'); return }
+    setError('')
+    setMessage('')
+
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      setError('Vui lòng nhập email liên kết với tài khoản của bạn.')
+      return
+    }
+
     setLoading(true)
     try {
-      await fetch('http://localhost:3000/auth/forgot-password', {
+      const data = await apiFetch('/auth/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       })
-      setSent(true)
-    } catch {
-      alert('Không thể kết nối máy chủ')
+      setMessage(data.message || 'Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi.')
+    } catch (err) {
+      setError(err.message || 'Không thể gửi liên kết đặt lại mật khẩu lúc này.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f8',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-      <Box sx={{ bgcolor: '#fff', borderRadius: 3, p: 5, width: '100%', maxWidth: 440,
-        boxShadow: '0 8px 40px rgba(0,0,0,0.10)' }}>
+    <AccountShell
+      eyebrow="Khôi phục mật khẩu"
+      title="Đặt lại quyền truy cập."
+      copy="Nhập email tài khoản. AEROTEC sẽ gửi liên kết đặt lại mật khẩu có hiệu lực trong thời gian ngắn."
+      onGoHome={onGoHome}
+      sideTitle="Bảo mật tài khoản"
+      sideCopy="Liên kết đặt lại mật khẩu chỉ dùng một lần và hết hạn nhanh để bảo vệ tài khoản của bạn."
+    >
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {message && <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert>}
 
-        <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', mb: 0.5 }}>
-          Quên mật khẩu?
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
-          Nhập email của bạn, chúng tôi sẽ gửi link đặt lại mật khẩu.
-        </Typography>
+      <Typography sx={{ mb: 0.75, color: 'rgba(248,250,252,0.72)', fontSize: 12, fontWeight: 900 }}>
+        ĐỊA CHỈ EMAIL
+      </Typography>
+      <TextField
+        fullWidth
+        placeholder="you@example.com"
+        type="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        onKeyDown={(event) => event.key === 'Enter' && handleSubmit()}
+        sx={fieldSx}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <EmailIcon sx={{ color: '#fb7185' }} />
+              </InputAdornment>
+            ),
+          },
+        }}
+      />
 
-        {sent ? (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Email đã được gửi! Kiểm tra hộp thư của bạn (kể cả thư mục spam).
-          </Alert>
-        ) : (
-          <>
-            <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5, color: '#374151', mb: 0.5 }}>
-              EMAIL ADDRESS
-            </Typography>
-            <TextField fullWidth size="small" placeholder="your@email.com" type="email"
-              value={email} onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              sx={{ mb: 3 }} />
-            <Button fullWidth variant="contained" size="large" onClick={handleSubmit} disabled={loading}
-              sx={{ bgcolor: '#1a3de4', fontWeight: 700, py: 1.5, borderRadius: 2, mb: 2,
-                '&:hover': { bgcolor: '#1530b8' } }}>
-              {loading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
-            </Button>
-          </>
-        )}
+      <Button
+        fullWidth
+        onClick={handleSubmit}
+        disabled={loading}
+        sx={{
+          minHeight: 48,
+          color: '#fff',
+          borderRadius: 1,
+          fontWeight: 950,
+          textTransform: 'none',
+          background: 'linear-gradient(135deg, #e11d48, #f97316)',
+        }}
+      >
+        {loading ? 'Đang gửi liên kết...' : 'Gửi liên kết đặt lại'}
+      </Button>
 
-        <Typography variant="body2" sx={{ textAlign: 'center', color: '#6b7280' }}>
-          Nhớ mật khẩu rồi?{' '}
-          <Box component="span" onClick={onGoLogin}
-            sx={{ color: '#1a3de4', fontWeight: 700, cursor: 'pointer',
-              '&:hover': { textDecoration: 'underline' } }}>
-            Đăng nhập
-          </Box>
-        </Typography>
-      </Box>
-    </Box>
+      <Typography sx={{ mt: 3, textAlign: 'center', color: 'rgba(248,250,252,0.62)' }}>
+        Đã nhớ mật khẩu?{' '}
+        <Box component="button" onClick={onGoLogin} sx={{ p: 0, border: 0, color: '#fb7185', background: 'transparent', font: 'inherit', fontWeight: 900, cursor: 'pointer' }}>
+          Đăng nhập
+        </Box>
+      </Typography>
+    </AccountShell>
   )
 }

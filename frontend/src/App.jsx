@@ -1,489 +1,456 @@
-import { useState, useEffect } from 'react'
-import AppBar from '@mui/material/AppBar'
-import Toolbar from '@mui/material/Toolbar'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import Tabs from '@mui/material/Tabs'
-import Tab from '@mui/material/Tab'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import CardMedia from '@mui/material/CardMedia'
-import CardActions from '@mui/material/CardActions'
-import Grid from '@mui/material/Grid'
-import Box from '@mui/material/Box'
-import Container from '@mui/material/Container'
-import IconButton from '@mui/material/IconButton'
-import Divider from '@mui/material/Divider'
-import Badge from '@mui/material/Badge'
-import Chip from '@mui/material/Chip'
-import InputAdornment from '@mui/material/InputAdornment'
-import SearchIcon from '@mui/icons-material/Search'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import PersonIcon from '@mui/icons-material/Person'
-import CloseIcon from '@mui/icons-material/Close'
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
+import { useEffect, useState } from 'react'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ProfilePage from './pages/ProfilePage'
+import HomePage from './pages/HomePage'
+import CheckoutPage from './pages/CheckoutPage'
+import ShowroomPage from './pages/ShowroomPage'
+import TechPage from './pages/TechPage'
+import ProductDetailPage from './pages/ProductDetailPage'
+import PartsPage from './pages/PartsPage'
+import ArticlesPage from './pages/ArticlesPage'
+import ArticleDetailPage from './pages/ArticleDetailPage'
+import AboutPage from './pages/AboutPage'
+import CartPage from './pages/CartPage'
+import OrdersPage from './pages/OrdersPage'
+import WishlistPage from './pages/WishlistPage'
+import AdminPage from './pages/AdminPage'
+import ContactPage from './pages/ContactPage'
+import { clearAuthToken, getAuthToken, setAuthToken } from './services/authToken'
+import { clearGuestCart } from './utils/cart'
+import { apiFetch } from './services/apiClient'
+import './App.css'
 
-// ── placeholder images (picsum)
-const heroImg = 'https://picsum.photos/seed/dalta-hero/1400/600'
-const cat1    = 'https://picsum.photos/seed/living/600/400'
-const cat2    = 'https://picsum.photos/seed/officetech/300/200'
-const cat3    = 'https://picsum.photos/seed/light/300/200'
-
-const PRODUCTS = [
-  { id: 1, name: 'Ceramic Vase',     price: 189000, img: 'https://picsum.photos/seed/vase/300/300',      tag: null },
-  { id: 2, name: 'Walnut Organizer', price: 320000, img: 'https://picsum.photos/seed/wood/300/300',      tag: null },
-  { id: 3, name: 'Table Lamp',       price: 480000, img: 'https://picsum.photos/seed/lamp/300/300',      tag: 'MỚI' },
-  { id: 4, name: 'Glass Set',        price: 95000,  img: 'https://picsum.photos/seed/glass/300/300',     tag: 'HOT' },
-  { id: 5, name: 'Linen Cushion',    price: 210000, img: 'https://picsum.photos/seed/cushion/300/300',   tag: null },
-  { id: 6, name: 'Oak Shelf',        price: 750000, img: 'https://picsum.photos/seed/shelf/300/300',     tag: null },
-  { id: 7, name: 'Pendant Light',    price: 560000, img: 'https://picsum.photos/seed/pendant/300/300',   tag: 'MỚI' },
-  { id: 8, name: 'Marble Tray',      price: 145000, img: 'https://picsum.photos/seed/marble/300/300',    tag: null },
-]
-
-function fmt(n) {
-  return n.toLocaleString('vi-VN') + '₫'
-}
-
-function TabPanel({ children, value, index }) {
-  return value === index ? <Box sx={{ pt: 2 }}>{children}</Box> : null
+function scrollToPageTop() {
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  })
 }
 
 export default function App() {
-  const [authOpen, setAuthOpen]   = useState(false)
-  const [authTab, setAuthTab]     = useState(0)
-  const [email, setEmail]         = useState('')
-  const [password, setPassword]   = useState('')
-  const [user, setUser]           = useState(null)
-  const [cartCount, setCartCount] = useState(0)
-  const [search, setSearch]       = useState('')
-  const [newsletter, setNewsletter] = useState('')
   const [page, setPage] = useState(() => {
-    // Tự động vào trang reset-password nếu URL có ?token=
+    const path = window.location.pathname
     const params = new URLSearchParams(window.location.search)
-    return params.get('token') ? 'reset-password' : 'home'
+    if (path === '/reset-password' && params.get('token')) {
+      return 'reset-password'
+    }
+    if (params.get('checkout')) return 'checkout'
+    if (path === '/checkout') return 'checkout'
+    if (path === '/profile') return 'profile'
+    if (path === '/login') return 'login'
+    if (path === '/register') return 'register'
+    if (path === '/forgot-password') return 'forgot-password'
+    if (path === '/showroom') return 'showroom'
+    if (path === '/tech') return 'tech'
+    if (path === '/parts') return 'parts'
+    if (path === '/articles') return 'articles'
+    if (path === '/about') return 'about'
+    if (path === '/contact') return 'contact'
+    if (path === '/cart') return 'cart'
+    if (path === '/orders') return 'orders'
+    if (path === '/wishlist') return 'wishlist'
+    if (path === '/admin') return 'admin'
+    if (path.startsWith('/parts/')) return 'product-detail'
+    if (path.startsWith('/articles/')) return 'article-detail'
+    return 'home'
+  })
+  const [selectedProduct, setSelectedProduct] = useState(() => {
+    const path = window.location.pathname
+    if (path.startsWith('/parts/')) {
+      const id = path.split('/parts/')[1]
+      return { id }
+    }
+    return null
+  })
+  const [selectedArticle, setSelectedArticle] = useState(() => {
+    const path = window.location.pathname
+    if (path.startsWith('/articles/')) {
+      const id = path.split('/articles/')[1]
+      return { id }
+    }
+    return null
+  })
+  const [user, setUser] = useState(() => {
+    const token = getAuthToken()
+    return token ? { email: 'Thành viên AEROTEC' } : null
   })
 
-  // Lấy token Google từ URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token  = params.get('token')
-    if (token) {
-      localStorage.setItem('token', token)
-      setUser({ email: 'Google User' })
-      window.history.replaceState({}, '', '/')
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
     }
   }, [])
 
-  const handleLogin = async () => {
-    try {
-      const res  = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        localStorage.setItem('token', data.access_token)
-        setUser({ email })
-        setAuthOpen(false)
-        setEmail(''); setPassword('')
-      } else {
-        alert(data.message || 'Đăng nhập thất bại')
+  // Navigate helper to change both React state and Browser URL
+  const navigate = (targetPage, replace = false, extraData = null) => {
+    setPage(targetPage)
+    if (extraData !== null) {
+      if (targetPage === 'product-detail') {
+        setSelectedProduct(extraData)
+      } else if (targetPage === 'article-detail') {
+        setSelectedArticle(extraData)
       }
-    } catch {
-      alert('Không thể kết nối máy chủ')
     }
+    let newPath = targetPage === 'home' ? '/' : `/${targetPage}`
+    if (targetPage === 'product-detail' && extraData?.id) {
+      newPath = `/parts/${extraData.id}`
+    } else if (targetPage === 'article-detail' && extraData?.id) {
+      newPath = `/articles/${extraData.id}`
+    }
+    if (replace) {
+      window.history.replaceState({ page: targetPage, extraData }, '', newPath)
+    } else {
+      window.history.pushState({ page: targetPage, extraData }, '', newPath)
+    }
+    scrollToPageTop()
   }
 
-  const handleRegister = async () => {
-    try {
-      const res  = await fetch('http://localhost:3000/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert('Đăng ký thành công! Vui lòng đăng nhập.')
-        setAuthTab(0)
+  // Handle browser back/forward buttons (Popstate) and unauthorized events
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const path = window.location.pathname
+      const params = new URLSearchParams(window.location.search)
+      const state = event.state || {}
+      if (path === '/reset-password' && params.get('token')) {
+        setPage('reset-password')
+      } else if (params.get('checkout')) {
+        setPage('checkout')
+      } else if (path === '/checkout') {
+        setPage('checkout')
+      } else if (path === '/profile') {
+        setPage('profile')
+      } else if (path === '/login') {
+        setPage('login')
+      } else if (path === '/register') {
+        setPage('register')
+      } else if (path === '/forgot-password') {
+        setPage('forgot-password')
+      } else if (path === '/showroom') {
+        setPage('showroom')
+      } else if (path === '/tech') {
+        setPage('tech')
+      } else if (path === '/parts') {
+        setPage('parts')
+      } else if (path === '/articles') {
+        setPage('articles')
+      } else if (path === '/about') {
+        setPage('about')
+      } else if (path === '/contact') {
+        setPage('contact')
+      } else if (path === '/cart') {
+        setPage('cart')
+      } else if (path === '/orders') {
+        setPage('orders')
+      } else if (path === '/wishlist') {
+        setPage('wishlist')
+      } else if (path === '/admin') {
+        setPage('admin')
+      } else if (path.startsWith('/parts/')) {
+        setPage('product-detail')
+        const id = path.split('/parts/')[1]
+        setSelectedProduct(state.extraData || { id })
+      } else if (path.startsWith('/articles/')) {
+        setPage('article-detail')
+        const id = path.split('/articles/')[1]
+        setSelectedArticle(state.extraData || { id })
       } else {
-        alert(data.message || 'Đăng ký thất bại')
+        setPage('home')
       }
-    } catch {
-      alert('Không thể kết nối máy chủ')
+      scrollToPageTop()
     }
-  }
 
-  const handleAddToCart = async (productId) => {
-    const token = localStorage.getItem('token')
-    if (!token) { setAuthOpen(true); return }
-    try {
-      const res = await fetch('http://localhost:3000/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ productId, quantity: 1 }),
-      })
-      if (res.ok) setCartCount(c => c + 1)
-      else alert('Thêm vào giỏ thất bại')
-    } catch {
-      alert('Không thể kết nối máy chủ')
+    const handleUnauthorized = () => {
+      setUser(null)
+      navigate('home')
     }
-  }
+
+    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('auth-unauthorized', handleUnauthorized)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('auth-unauthorized', handleUnauthorized)
+    }
+  }, [])
+
+  // Verify auth token on initial app mount
+  useEffect(() => {
+    const token = getAuthToken()
+    if (token) {
+      apiFetch('/users/profile', { auth: true })
+        .then((profileData) => {
+          if (profileData && profileData.email) {
+            setUser(profileData)
+          }
+        })
+        .catch((err) => {
+          console.warn('Startup token validation failed:', err.message)
+          // If apiFetch returns 401, it will trigger handleUnauthorized above.
+          // Fallback check:
+          if (err.message.toLowerCase().includes('unauthorized') || err.message.toLowerCase().includes('jwt') || err.message.toLowerCase().includes('token')) {
+            clearAuthToken()
+            setUser(null)
+            navigate('home')
+          }
+        })
+    }
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('authToken')
+    if (!token) return
+
+    setAuthToken(token, true)
+    clearGuestCart()
+    apiFetch('/users/profile', { auth: true })
+      .then((profileData) => setUser(profileData?.email ? profileData : { email: 'Google User' }))
+      .catch(() => setUser({ email: 'Google User' }))
+    window.history.replaceState({}, '', '/')
+  }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    clearAuthToken()
     setUser(null)
-    setCartCount(0)
+    navigate('home')
   }
 
-  const filtered = PRODUCTS.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  )
+  if (page === 'login') {
+    return (
+      <LoginPage
+        onLoginSuccess={(u) => {
+          clearGuestCart()
+          setUser(u)
+          if (u?.role === 'admin') {
+            navigate('admin')
+          } else {
+            navigate('home')
+          }
+        }}
+        onGoRegister={() => navigate('register')}
+        onForgotPassword={() => navigate('forgot-password')}
+        onGoHome={() => navigate('home')}
+      />
+    )
+  }
+
+  if (page === 'register') {
+    return (
+      <RegisterPage
+        onRegisterSuccess={() => navigate('login')}
+        onGoLogin={() => navigate('login')}
+        onGoHome={() => navigate('home')}
+      />
+    )
+  }
+
+  if (page === 'forgot-password') {
+    return <ForgotPasswordPage onGoLogin={() => navigate('login')} onGoHome={() => navigate('home')} />
+  }
+
+  if (page === 'reset-password') {
+    return <ResetPasswordPage onGoLogin={() => navigate('login')} onGoHome={() => navigate('home')} />
+  }
+
+  if (page === 'profile') {
+    return (
+      <ProfilePage
+        user={user}
+        onLogout={handleLogout}
+        onGoHome={() => navigate('home')}
+      />
+    )
+  }
+
+  if (page === 'checkout') {
+    return (
+      <CheckoutPage
+        user={user}
+        onGoHome={() => navigate('parts')}
+        onGoProfile={() => navigate('profile')}
+        onGoOrders={() => navigate('orders')}
+        onGoLogin={() => navigate('login')}
+      />
+    )
+  }
+
+  if (page === 'showroom') {
+    return (
+      <ShowroomPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'tech') {
+    return (
+      <TechPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'articles') {
+    return (
+      <ArticlesPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'parts') {
+    return (
+      <PartsPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'about') {
+    return (
+      <AboutPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'contact') {
+    return (
+      <ContactPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'cart') {
+    return (
+      <CartPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'orders') {
+    return (
+      <OrdersPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
+  if (page === 'wishlist') {
+    return (
+      <WishlistPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
+  if (page === 'admin') {
+    return (
+      <AdminPage
+        user={user}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
+  if (page === 'product-detail') {
+    return (
+      <ProductDetailPage
+        user={user}
+        selectedProduct={selectedProduct}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
+
+  if (page === 'article-detail') {
+    return (
+      <ArticleDetailPage
+        user={user}
+        selectedArticle={selectedArticle}
+        onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+        onOpenLogin={() => navigate('login')}
+        onOpenRegister={() => navigate('register')}
+        onOpenProfile={() => navigate('profile')}
+        onLogout={handleLogout}
+        onGoCheckout={() => navigate('checkout')}
+      />
+    )
+  }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f0' }}>
-
-      {/* ── SHOW LOGIN PAGE ── */}
-      {page === 'login' && (
-        <LoginPage
-          onLoginSuccess={(u) => { setUser(u); setPage('home') }}
-          onGoRegister={() => setPage('register')}
-          onForgotPassword={() => setPage('forgot-password')}
-        />
-      )}
-
-      {/* ── SHOW REGISTER PAGE ── */}
-      {page === 'register' && (
-        <RegisterPage
-          onRegisterSuccess={() => setPage('login')}
-          onGoLogin={() => setPage('login')}
-        />
-      )}
-
-      {/* ── SHOW FORGOT PASSWORD PAGE ── */}
-      {page === 'forgot-password' && (
-        <ForgotPasswordPage onGoLogin={() => setPage('login')} />
-      )}
-
-      {/* ── SHOW RESET PASSWORD PAGE ── */}
-      {page === 'reset-password' && (
-        <ResetPasswordPage onGoLogin={() => setPage('login')} />
-      )}
-
-      {/* ── SHOW PROFILE PAGE ── */}
-      {page === 'profile' && (
-        <ProfilePage
-          user={user}
-          onLogout={() => { handleLogout(); setPage('home') }}
-          onGoHome={() => setPage('home')}
-        />
-      )}
-
-      {/* ── SHOW HOME PAGE ── */}
-      {page === 'home' && (<>
-
-      {/* ── NAVBAR ── */}
-      <AppBar position="sticky" elevation={0}
-        sx={{ bgcolor: '#fff', borderBottom: '1px solid #e0e0e0', color: 'text.primary' }}>
-        <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ gap: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 2, color: '#111', flexShrink: 0 }}>
-              DALTA
-            </Typography>
-
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3, mx: 2 }}>
-              {['Trang chủ', 'Sản phẩm', 'Danh mục', 'Về chúng tôi'].map(item => (
-                <Typography key={item} variant="body2"
-                  sx={{ cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.main' } }}>
-                  {item}
-                </Typography>
-              ))}
-            </Box>
-
-            <TextField size="small" placeholder="Tìm kiếm..." value={search}
-              onChange={e => setSearch(e.target.value)}
-              sx={{ flex: 1, maxWidth: 300 }}
-              slotProps={{ input: { startAdornment: (
-                <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>
-              )}}}
-            />
-
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <IconButton>
-                <Badge badgeContent={cartCount} color="primary">
-                  <ShoppingCartIcon />
-                </Badge>
-              </IconButton>
-
-              {user ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Button size="small" onClick={() => setPage('profile')}
-                    sx={{ fontWeight: 600, color: '#111' }}>
-                    {user.email}
-                  </Button>
-                  <Button size="small" onClick={handleLogout} variant="outlined"
-                    sx={{ borderColor: '#ddd', color: 'text.secondary' }}>
-                    Đăng xuất
-                  </Button>
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button size="small" variant="outlined" onClick={() => setPage('login')}
-                    sx={{ borderColor: '#ddd', color: 'text.primary' }}>
-                    Đăng nhập
-                  </Button>
-                  <Button size="small" variant="contained" onClick={() => setPage('register')}>
-                    Đăng ký
-                  </Button>                </Box>
-              )}            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
-
-      {/* ── HERO ── */}
-      <Box sx={{ position: 'relative', height: { xs: 320, md: 500 }, overflow: 'hidden' }}>
-        <Box component="img" src={heroImg} alt="hero"
-          sx={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.55)' }} />
-        <Box sx={{
-          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-          justifyContent: 'center', px: { xs: 3, md: 10 }, color: '#fff',
-        }}>
-          <Typography variant="overline" sx={{ letterSpacing: 4, opacity: 0.8, mb: 1 }}>
-            BỘ SƯU TẬP MỚI
-          </Typography>
-          <Typography variant="h2" sx={{ fontWeight: 800, lineHeight: 1.1, mb: 2, maxWidth: 520 }}>
-            Structures of<br />
-            <Box component="span" sx={{ color: '#aa3bff' }}>Intention.</Box>
-          </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.85, mb: 3, maxWidth: 400 }}>
-            Curating a dialogue between form and material elegance.
-            Our collection defines the contemporary lifestyle.
-          </Typography>
-          <Box>
-            <Button variant="contained" size="large"
-              sx={{ px: 4, fontWeight: 700, bgcolor: '#aa3bff', '&:hover': { bgcolor: '#8e2de2' } }}>
-              Khám phá ngay
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* ── CATEGORIES ── */}
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Typography variant="overline" sx={{ letterSpacing: 3, color: 'text.secondary' }}>
-          DANH MỤC
-        </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
-          Curation by Form
-        </Typography>
-
-        <Grid container spacing={2} sx={{ height: { md: 420 } }}>
-          {/* Large left */}
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Box sx={{ position: 'relative', height: '100%', minHeight: 260, borderRadius: 2, overflow: 'hidden', cursor: 'pointer',
-              '&:hover img': { transform: 'scale(1.04)' } }}>
-              <Box component="img" src={cat1} alt="Living Space"
-                sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: '0.4s', filter: 'brightness(0.7)' }} />
-              <Box sx={{ position: 'absolute', bottom: 20, left: 20, color: '#fff' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>Living Space</Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>Sản phẩm thiết yếu cho ngôi nhà</Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Right column */}
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
-              {[{ img: cat2, label: 'Office Tech', sub: 'Công nghệ văn phòng' },
-                { img: cat3, label: 'Atmospheric Light', sub: 'Ánh sáng không gian' }].map(c => (
-                <Box key={c.label} sx={{ position: 'relative', flex: 1, minHeight: 120, borderRadius: 2,
-                  overflow: 'hidden', cursor: 'pointer', '&:hover img': { transform: 'scale(1.04)' } }}>
-                  <Box component="img" src={c.img} alt={c.label}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: '0.4s', filter: 'brightness(0.65)' }} />
-                  <Box sx={{ position: 'absolute', bottom: 14, left: 16, color: '#fff' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{c.label}</Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.8 }}>{c.sub}</Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-
-      {/* ── PRODUCTS ── */}
-      <Box sx={{ bgcolor: '#fff', py: 6 }}>
-        <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700 }}>The DALTA Selection</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Objects selected for their geometric purity and material integrity.
-            </Typography>
-          </Box>
-
-          <Grid container spacing={3}>
-            {filtered.map(p => (
-              <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3 }}>
-                <Card elevation={0} sx={{ border: '1px solid #eee', borderRadius: 2,
-                  transition: '0.2s', '&:hover': { boxShadow: 4, transform: 'translateY(-4px)' } }}>
-                  <Box sx={{ position: 'relative' }}>
-                    <CardMedia component="img" image={p.img} alt={p.name}
-                      sx={{ height: 220, objectFit: 'cover' }} />
-                    {p.tag && (
-                      <Chip label={p.tag} size="small" color="primary"
-                        sx={{ position: 'absolute', top: 10, right: 10, fontWeight: 700, fontSize: 10 }} />
-                    )}
-                  </Box>
-                  <CardContent sx={{ pb: 0 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{p.name}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11, mb: 0.5 }}>
-                      Sản phẩm chất lượng cao
-                    </Typography>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#aa3bff' }}>
-                      {fmt(p.price)}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ pt: 0, px: 2, pb: 2 }}>
-                    <Button fullWidth size="small" variant="outlined" startIcon={<AddShoppingCartIcon />}
-                      onClick={() => handleAddToCart(p.id)}
-                      sx={{ borderColor: '#ddd', color: 'text.primary', fontWeight: 600,
-                        '&:hover': { bgcolor: '#aa3bff', color: '#fff', borderColor: '#aa3bff' } }}>
-                      Thêm vào giỏ
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-
-          <Box sx={{ textAlign: 'center', mt: 4 }}>
-            <Button variant="outlined" size="large"
-              sx={{ px: 6, borderColor: '#111', color: '#111', fontWeight: 700,
-                '&:hover': { bgcolor: '#111', color: '#fff' } }}>
-              Xem tất cả sản phẩm
-            </Button>
-          </Box>
-        </Container>
-      </Box>
-
-      {/* ── NEWSLETTER ── */}
-      <Box sx={{ bgcolor: '#1a1a2e', color: '#fff', py: 8 }}>
-        <Container maxWidth="md">
-          <Grid container spacing={4} alignItems="center">
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="overline" sx={{ letterSpacing: 3, opacity: 0.6 }}>
-                THAM GIA CỘNG ĐỒNG
-              </Typography>
-              <Typography variant="h3" sx={{ fontWeight: 800, lineHeight: 1.2, mt: 1 }}>
-                Curated insights<br />delivered to your<br />
-                <Box component="span" sx={{ color: '#aa3bff' }}>space.</Box>
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.6, mt: 2 }}>
-                Đăng ký để nhận thông tin sản phẩm mới và ưu đãi độc quyền.
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField fullWidth placeholder="email@address.com" value={newsletter}
-                  onChange={e => setNewsletter(e.target.value)}
-                  sx={{ bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 1,
-                    input: { color: '#fff' }, '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' } }} />
-                <Button variant="contained" size="large" fullWidth
-                  sx={{ bgcolor: '#aa3bff', fontWeight: 700, py: 1.5,
-                    '&:hover': { bgcolor: '#8e2de2' } }}>
-                  Tham gia DALTA Collective
-                </Button>
-                <Typography variant="caption" sx={{ opacity: 0.4, textAlign: 'center' }}>
-                  Bằng cách đăng ký, bạn đồng ý với chính sách bảo mật của chúng tôi.
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* ── FOOTER ── */}
-      <Box sx={{ bgcolor: '#111', color: '#fff', py: 4 }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 2 }}>DALTA</Typography>
-              <Typography variant="caption" sx={{ opacity: 0.4 }}>
-                © 2026 DALTA. Mọi quyền được bảo lưu.
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: { md: 'flex-end' } }}>
-                {['Chính sách bảo mật', 'Điều khoản dịch vụ', 'Chính sách vận chuyển', 'Liên hệ'].map(item => (
-                  <Typography key={item} variant="caption"
-                    sx={{ opacity: 0.5, cursor: 'pointer', '&:hover': { opacity: 1 } }}>
-                    {item}
-                  </Typography>
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* ── AUTH DIALOG ── */}
-      <Dialog open={authOpen} onClose={() => setAuthOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 0 }}>
-          <Tabs value={authTab} onChange={(_, v) => setAuthTab(v)} textColor="primary" indicatorColor="primary">
-            <Tab label="Đăng nhập" />
-            <Tab label="Đăng ký" />
-          </Tabs>
-          <IconButton onClick={() => setAuthOpen(false)} size="small"><CloseIcon /></IconButton>
-        </DialogTitle>
-
-        <DialogContent>
-          {/* Login */}
-          <TabPanel value={authTab} index={0}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField label="Email" type="email" fullWidth size="small"
-                value={email} onChange={e => setEmail(e.target.value)} />
-              <TextField label="Mật khẩu" type="password" fullWidth size="small"
-                value={password} onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-              <Button variant="contained" fullWidth size="large" onClick={handleLogin}>
-                Đăng nhập
-              </Button>
-              <Divider>Hoặc</Divider>
-              <Button variant="outlined" fullWidth size="large"
-                href="http://localhost:3000/auth/google"
-                startIcon={<img src="https://www.google.com/favicon.ico" width="18" alt="google" />}
-                sx={{ color: 'text.primary', borderColor: '#ddd' }}>
-                Tiếp tục với Google
-              </Button>
-            </Box>
-          </TabPanel>
-
-          {/* Register */}
-          <TabPanel value={authTab} index={1}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField label="Email" type="email" fullWidth size="small"
-                value={email} onChange={e => setEmail(e.target.value)} />
-              <TextField label="Mật khẩu" type="password" fullWidth size="small"
-                value={password} onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleRegister()} />
-              <Button variant="contained" fullWidth size="large" onClick={handleRegister}>
-                Đăng ký
-              </Button>
-            </Box>
-          </TabPanel>
-        </DialogContent>
-      </Dialog>
-
-      </>)}
-    </Box>
+    <HomePage
+      user={user}
+      onNavigate={(targetPage, extraData) => navigate(targetPage, false, extraData)}
+      onOpenLogin={() => navigate('login')}
+      onOpenRegister={() => navigate('register')}
+      onOpenProfile={() => navigate('profile')}
+      onLogout={handleLogout}
+      onGoCheckout={() => navigate('checkout')}
+    />
   )
 }

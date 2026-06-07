@@ -1,95 +1,156 @@
-import { useState, useEffect } from 'react'
-import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import Button from '@mui/material/Button'
+import { useEffect, useState } from 'react'
 import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import InputAdornment from '@mui/material/InputAdornment'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import LockIcon from '@mui/icons-material/LockOutlined'
+import AccountShell from './AccountShell'
+import { apiFetch } from '../services/apiClient'
 
-export default function ResetPasswordPage({ onGoLogin }) {
-  const [token, setToken]           = useState('')
-  const [newPassword, setNew]       = useState('')
-  const [confirmPass, setConfirm]   = useState('')
-  const [loading, setLoading]       = useState(false)
-  const [success, setSuccess]       = useState(false)
+const fieldSx = {
+  mb: 2,
+  '& .MuiOutlinedInput-root': {
+    color: '#f8fafc',
+    borderRadius: 1,
+    background: 'rgba(5,5,5,0.52)',
+    '& fieldset': { borderColor: 'rgba(248,250,252,0.16)' },
+    '&:hover fieldset': { borderColor: 'rgba(244,63,94,0.46)' },
+    '&.Mui-focused fieldset': { borderColor: '#f43f5e' },
+  },
+  '& .MuiInputBase-input::placeholder': { color: 'rgba(248,250,252,0.38)', opacity: 1 },
+}
 
-  // Lấy token từ URL ?token=xxx
+export default function ResetPasswordPage({ onGoLogin, onGoHome }) {
+  const [token, setToken] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const t = params.get('token')
-    if (t) setToken(t)
+    setToken(params.get('token') || '')
   }, [])
 
   const handleSubmit = async () => {
-    if (!newPassword || !confirmPass) { alert('Vui lòng nhập đầy đủ'); return }
-    if (newPassword !== confirmPass) { alert('Mật khẩu xác nhận không khớp'); return }
-    if (newPassword.length < 6) { alert('Mật khẩu phải ít nhất 6 ký tự'); return }
+    setError('')
+
+    if (!token) {
+      setError('Thiếu token đặt lại mật khẩu từ URL.')
+      return
+    }
+
+    if (!newPassword || !confirmPassword) {
+      setError('Vui lòng nhập và xác nhận mật khẩu mới.')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      setError('Mật khẩu mới phải có ít nhất 8 ký tự.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Xác nhận mật khẩu không khớp.')
+      return
+    }
+
     setLoading(true)
     try {
-      const res  = await fetch('http://localhost:3000/auth/reset-password', {
+      await apiFetch('/auth/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),
       })
-      const data = await res.json()
-      if (res.ok) {
-        setSuccess(true)
-      } else {
-        alert(data.message || 'Token không hợp lệ hoặc đã hết hạn')
-      }
-    } catch {
-      alert('Không thể kết nối máy chủ')
+      setSuccess(true)
+    } catch (err) {
+      setError(err.message || 'Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f8',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-      <Box sx={{ bgcolor: '#fff', borderRadius: 3, p: 5, width: '100%', maxWidth: 440,
-        boxShadow: '0 8px 40px rgba(0,0,0,0.10)' }}>
+    <AccountShell
+      eyebrow="Mật khẩu mới"
+      title="Thiết lập mật khẩu."
+      copy="Chọn mật khẩu mới cho tài khoản AEROTEC. Sau khi đổi thành công, bạn cần đăng nhập lại."
+      onGoHome={onGoHome}
+      sideTitle="Quay lại an toàn"
+      sideCopy="Thông tin hồ sơ, địa chỉ và lịch sử đơn hàng vẫn được giữ nguyên sau khi đổi mật khẩu."
+    >
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }}>Đặt lại mật khẩu thành công.</Alert>}
 
-        <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', mb: 0.5 }}>
-          Đặt lại mật khẩu
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
-          Nhập mật khẩu mới cho tài khoản của bạn.
-        </Typography>
+      {!success ? (
+        <>
+          <Typography sx={{ mb: 0.75, color: 'rgba(248,250,252,0.72)', fontSize: 12, fontWeight: 900 }}>
+            MẬT KHẨU MỚI
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="Tối thiểu 8 ký tự"
+            type="password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            sx={fieldSx}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon sx={{ color: '#fb7185' }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
 
-        {success ? (
-          <>
-            <Alert severity="success" sx={{ mb: 3 }}>
-              Mật khẩu đã được đặt lại thành công!
-            </Alert>
-            <Button fullWidth variant="contained" size="large" onClick={onGoLogin}
-              sx={{ bgcolor: '#1a3de4', fontWeight: 700, py: 1.5, borderRadius: 2 }}>
-              Đăng nhập ngay
-            </Button>
-          </>
-        ) : (
-          <>
-            <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5, color: '#374151', mb: 0.5 }}>
-              MẬT KHẨU MỚI
-            </Typography>
-            <TextField fullWidth size="small" placeholder="••••••••" type="password"
-              value={newPassword} onChange={e => setNew(e.target.value)} sx={{ mb: 2 }} />
+          <Typography sx={{ mb: 0.75, color: 'rgba(248,250,252,0.72)', fontSize: 12, fontWeight: 900 }}>
+            XÁC NHẬN MẬT KHẨU
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="Nhập lại mật khẩu"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSubmit()}
+            sx={fieldSx}
+          />
 
-            <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5, color: '#374151', mb: 0.5 }}>
-              XÁC NHẬN MẬT KHẨU
-            </Typography>
-            <TextField fullWidth size="small" placeholder="••••••••" type="password"
-              value={confirmPass} onChange={e => setConfirm(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              sx={{ mb: 3 }} />
-
-            <Button fullWidth variant="contained" size="large" onClick={handleSubmit} disabled={loading}
-              sx={{ bgcolor: '#1a3de4', fontWeight: 700, py: 1.5, borderRadius: 2, mb: 2,
-                '&:hover': { bgcolor: '#1530b8' } }}>
-              {loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
-            </Button>
-          </>
-        )}
-      </Box>
-    </Box>
+          <Button
+            fullWidth
+            onClick={handleSubmit}
+            disabled={loading}
+            sx={{
+              minHeight: 48,
+              color: '#fff',
+              borderRadius: 1,
+              fontWeight: 950,
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, #e11d48, #f97316)',
+            }}
+          >
+            {loading ? 'Đang cập nhật mật khẩu...' : 'Đặt lại mật khẩu'}
+          </Button>
+        </>
+      ) : (
+        <Button
+          fullWidth
+          onClick={onGoLogin}
+          sx={{
+            minHeight: 48,
+            color: '#fff',
+            borderRadius: 1,
+            fontWeight: 950,
+            textTransform: 'none',
+            background: 'linear-gradient(135deg, #e11d48, #f97316)',
+          }}
+        >
+          Đăng nhập ngay
+        </Button>
+      )}
+    </AccountShell>
   )
 }

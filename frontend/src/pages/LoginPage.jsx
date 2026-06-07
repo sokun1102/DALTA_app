@@ -1,210 +1,186 @@
 import { useState } from 'react'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
-import FormControlLabel from '@mui/material/FormControlLabel'
 import Divider from '@mui/material/Divider'
+import FormControlLabel from '@mui/material/FormControlLabel'
 import InputAdornment from '@mui/material/InputAdornment'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import EmailIcon from '@mui/icons-material/EmailOutlined'
+import GoogleIcon from '@mui/icons-material/Google'
 import LockIcon from '@mui/icons-material/LockOutlined'
+import AccountShell from './AccountShell'
+import { API_BASE_URL } from '../config/api'
+import { apiFetch } from '../services/apiClient'
+import { setAuthToken } from '../services/authToken'
 
-export default function LoginPage({ onLoginSuccess, onGoRegister, onForgotPassword }) {
-  const [email, setEmail]       = useState('')
+const fieldSx = {
+  mb: 2,
+  '& .MuiOutlinedInput-root': {
+    color: '#f8fafc',
+    borderRadius: 1,
+    background: 'rgba(5,5,5,0.52)',
+    '& fieldset': { borderColor: 'rgba(248,250,252,0.16)' },
+    '&:hover fieldset': { borderColor: 'rgba(244,63,94,0.46)' },
+    '&.Mui-focused fieldset': { borderColor: '#f43f5e' },
+  },
+  '& .MuiInputBase-input::placeholder': { color: 'rgba(248,250,252,0.38)', opacity: 1 },
+}
+
+export default function LoginPage({ onLoginSuccess, onGoRegister, onForgotPassword, onGoHome }) {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
-  const [loading, setLoading]   = useState(false)
+  const [remember, setRemember] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleLogin = async () => {
-    if (!email || !password) { alert('Vui lòng nhập đầy đủ thông tin'); return }
+    setError('')
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!normalizedEmail || !password) {
+      setError('Vui lòng nhập email và mật khẩu để tiếp tục.')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự.')
+      return
+    }
+
     setLoading(true)
     try {
-      const res  = await fetch('http://localhost:3000/auth/login', {
+      const data = await apiFetch('/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
       })
-      const data = await res.json()
-      if (res.ok) {
-        localStorage.setItem('token', data.access_token)
-        onLoginSuccess?.({ email })
-      } else {
-        alert(data.message || 'Email hoặc mật khẩu không đúng')
+
+      setAuthToken(data.access_token, remember)
+      try {
+        const profile = await apiFetch('/users/profile', { auth: true })
+        onLoginSuccess?.(profile?.email ? profile : { email: normalizedEmail })
+      } catch {
+        onLoginSuccess?.({ email: normalizedEmail })
       }
-    } catch {
-      alert('Không thể kết nối máy chủ')
+    } catch (err) {
+      setError(err.message || 'Email hoặc mật khẩu không chính xác.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Box sx={{
-      minHeight: '100vh',
-      bgcolor: '#dde3ee',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      p: 2,
-    }}>
-      <Box sx={{
-        display: 'flex',
-        width: '100%',
-        maxWidth: 860,
-        borderRadius: 3,
-        overflow: 'hidden',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-      }}>
+    <AccountShell
+      eyebrow="Đăng nhập bảo mật"
+      title="Chào mừng quay trở lại."
+      copy="Sử dụng tài khoản AEROTEC để quản lý hồ sơ, địa chỉ nhận hàng, giỏ hàng và lịch sử đơn hàng."
+      onGoHome={onGoHome}
+    >
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* ── LEFT PANEL ── */}
-        <Box sx={{
-          width: { xs: 0, md: '42%' },
-          display: { xs: 'none', md: 'flex' },
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          bgcolor: '#e8edf7',
-          p: 4,
-        }}>
-          {/* Logo */}
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: '#1a3de4', letterSpacing: 0.5 }}>
-              DALTA
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
-              Quality Products. Smart Shopping.
-            </Typography>
-          </Box>
-
-          {/* Middle text */}
-          <Box>
-            <Box sx={{ width: 32, height: 3, bgcolor: '#1a3de4', mb: 2, borderRadius: 1 }} />
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#111827', lineHeight: 1.2, mb: 2 }}>
-              Refined<br />Access for<br />Curators.
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.7 }}>
-              Step back into your workspace where every
-              detail is managed with structural precision.
-            </Typography>
-          </Box>
-
-          {/* Footer */}
-          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-            © 2026 DALTA.
-          </Typography>
-        </Box>
-
-        {/* ── RIGHT PANEL ── */}
-        <Box sx={{
-          flex: 1,
-          bgcolor: '#fff',
-          p: { xs: 3, md: 5 },
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: '#111827', mb: 0.5 }}>
-            Welcome Back
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#6b7280', mb: 4 }}>
-            Please enter your details to sign in.
-          </Typography>
-
-          {/* Email */}
-          <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 1, color: '#374151', mb: 0.5 }}>
-            EMAIL ADDRESS
-          </Typography>
-          <TextField
-            fullWidth size="small" placeholder="your@email.com"
-            type="email" value={email} onChange={e => setEmail(e.target.value)}
-            sx={{ mb: 2 }}
-            slotProps={{ input: { startAdornment: (
+      <Typography sx={{ mb: 0.75, color: 'rgba(248,250,252,0.72)', fontSize: 12, fontWeight: 900 }}>
+        ĐỊA CHỈ EMAIL
+      </Typography>
+      <TextField
+        fullWidth
+        placeholder="you@example.com"
+        type="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        sx={fieldSx}
+        slotProps={{
+          input: {
+            startAdornment: (
               <InputAdornment position="start">
-                <EmailIcon fontSize="small" sx={{ color: '#9ca3af' }} />
+                <EmailIcon sx={{ color: '#fb7185' }} />
               </InputAdornment>
-            )}}}
-          />
+            ),
+          },
+        }}
+      />
 
-          {/* Password */}
-          <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 1, color: '#374151', mb: 0.5 }}>
-            PASSWORD
-          </Typography>
-          <TextField
-            fullWidth size="small" placeholder="••••••••"
-            type="password" value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            sx={{ mb: 1.5 }}
-            slotProps={{ input: { startAdornment: (
+      <Typography sx={{ mb: 0.75, color: 'rgba(248,250,252,0.72)', fontSize: 12, fontWeight: 900 }}>
+        MẬT KHẨU
+      </Typography>
+      <TextField
+        fullWidth
+        placeholder="Tối thiểu 8 ký tự"
+        type="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        onKeyDown={(event) => event.key === 'Enter' && handleLogin()}
+        sx={fieldSx}
+        slotProps={{
+          input: {
+            startAdornment: (
               <InputAdornment position="start">
-                <LockIcon fontSize="small" sx={{ color: '#9ca3af' }} />
+                <LockIcon sx={{ color: '#fb7185' }} />
               </InputAdornment>
-            )}}}
-          />
+            ),
+          },
+        }}
+      />
 
-          {/* Remember + Forgot */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <FormControlLabel
-              control={<Checkbox size="small" checked={remember} onChange={e => setRemember(e.target.checked)} />}
-              label={<Typography variant="body2" sx={{ color: '#374151' }}>Remember Me</Typography>}
-              sx={{ m: 0 }}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={remember}
+              onChange={(event) => setRemember(event.target.checked)}
+              sx={{ color: 'rgba(248,250,252,0.52)', '&.Mui-checked': { color: '#f43f5e' } }}
             />
-            <Typography variant="body2"
-              sx={{ color: '#1a3de4', fontWeight: 600, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-              onClick={onForgotPassword}>
-              Forgot Password?
-            </Typography>
-          </Box>
-
-          {/* Sign In button */}
-          <Button fullWidth variant="contained" size="large" onClick={handleLogin} disabled={loading}
-            sx={{
-              bgcolor: '#1a3de4', fontWeight: 700, py: 1.5, borderRadius: 2, mb: 3,
-              '&:hover': { bgcolor: '#1530b8' },
-            }}>
-            {loading ? 'Đang đăng nhập...' : 'Sign In'}
-          </Button>
-
-          {/* Divider */}
-          <Divider sx={{ mb: 3 }}>
-            <Typography variant="caption" sx={{ color: '#9ca3af', letterSpacing: 1 }}>
-              OR CONTINUE WITH
-            </Typography>
-          </Divider>
-
-          {/* Social buttons */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <Button fullWidth variant="outlined" size="large"
-              href="http://localhost:3000/auth/google"
-              startIcon={<img src="https://www.google.com/favicon.ico" width="18" alt="g" />}
-              sx={{ borderColor: '#e5e7eb', color: '#111827', fontWeight: 600, borderRadius: 2,
-                '&:hover': { bgcolor: '#f9fafb', borderColor: '#d1d5db' } }}>
-              Google
-            </Button>
-            <Button fullWidth variant="outlined" size="large"
-              startIcon={
-                <Box sx={{ width: 18, height: 18, bgcolor: '#1877f2', borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography sx={{ color: '#fff', fontSize: 12, fontWeight: 800, lineHeight: 1 }}>f</Typography>
-                </Box>
-              }
-              sx={{ borderColor: '#e5e7eb', color: '#111827', fontWeight: 600, borderRadius: 2,
-                '&:hover': { bgcolor: '#f9fafb', borderColor: '#d1d5db' } }}>
-              Facebook
-            </Button>
-          </Box>
-
-          {/* Go to register */}
-          <Typography variant="body2" sx={{ textAlign: 'center', color: '#6b7280' }}>
-            Don't have an account?{' '}
-            <Box component="span"
-              onClick={onGoRegister}
-              sx={{ color: '#1a3de4', fontWeight: 700, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-              Create Account
-            </Box>
-          </Typography>
-        </Box>
-
+          }
+          label={<Typography sx={{ color: 'rgba(248,250,252,0.72)', fontSize: 14 }}>Ghi nhớ đăng nhập</Typography>}
+        />
+        <Button onClick={onForgotPassword} sx={{ color: '#fb7185', fontWeight: 900, textTransform: 'none' }}>
+          Quên mật khẩu?
+        </Button>
       </Box>
-    </Box>
+
+      <Button
+        fullWidth
+        onClick={handleLogin}
+        disabled={loading}
+        sx={{
+          minHeight: 48,
+          color: '#fff',
+          borderRadius: 1,
+          fontWeight: 950,
+          textTransform: 'none',
+          background: 'linear-gradient(135deg, #e11d48, #f97316)',
+        }}
+      >
+        {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+      </Button>
+
+      <Divider sx={{ my: 3, borderColor: 'rgba(248,250,252,0.12)' }}>
+        <Typography sx={{ color: 'rgba(248,250,252,0.42)', fontSize: 12, fontWeight: 900 }}>HOẶC</Typography>
+      </Divider>
+
+      <Button
+        fullWidth
+        href={`${API_BASE_URL}/auth/google`}
+        startIcon={<GoogleIcon />}
+        sx={{
+          minHeight: 46,
+          color: '#f8fafc',
+          border: '1px solid rgba(248,250,252,0.16)',
+          borderRadius: 1,
+          fontWeight: 900,
+          textTransform: 'none',
+        }}
+      >
+        Tiếp tục với Google
+      </Button>
+
+      <Typography sx={{ mt: 3, textAlign: 'center', color: 'rgba(248,250,252,0.62)' }}>
+        Chưa có tài khoản?{' '}
+        <Box component="button" onClick={onGoRegister} sx={{ p: 0, border: 0, color: '#fb7185', background: 'transparent', font: 'inherit', fontWeight: 900, cursor: 'pointer' }}>
+          Tạo tài khoản mới
+        </Box>
+      </Typography>
+    </AccountShell>
   )
 }
