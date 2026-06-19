@@ -29,6 +29,9 @@ FROM nginx:alpine
 # Copy thành quả (thư mục dist) từ GIAI ĐOẠN 1 sang thư mục phục vụ web của Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Copy nginx configuration file
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Mở cổng 80 để cho phép bên ngoài truy cập vào web
 EXPOSE 80
 

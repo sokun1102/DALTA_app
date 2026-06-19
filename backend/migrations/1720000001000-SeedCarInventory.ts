@@ -23,7 +23,7 @@ type CarSeed = {
 
 const cars: CarSeed[] = [
   {
-    name: 'Cánh Gió Đuôi Carbon Ép Apex',
+    name: 'Apex Forged Carbon Rear Wing',
     sku: 'AT-APEX-WING-01',
     type: 'Khí động học',
     price: 120000000,
@@ -44,7 +44,7 @@ const cars: CarSeed[] = [
     accent: '#e11d48',
   },
   {
-    name: 'Hệ Thống Ống Xả Titanium Cổ Van Cao Cấp',
+    name: 'Titanium Valved Exhaust System',
     sku: 'AT-TITAN-EXH-02',
     type: 'Động cơ',
     price: 280000000,
@@ -65,7 +65,7 @@ const cars: CarSeed[] = [
     accent: '#f59e0b',
   },
   {
-    name: 'Bộ Đĩa Phanh Gốm Carbon Ceramic-Matrix',
+    name: 'Carbon Ceramic Brake Rotor Kit',
     sku: 'AT-CERAM-BRK-03',
     type: 'Hệ thống phanh',
     price: 350000000,

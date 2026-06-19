@@ -520,8 +520,8 @@ export default function ProductDetailPage({ user, selectedProduct, onNavigate, o
 
   const thumbnails = [
     productImage,
-    '/images/cars/apex-r7.png',
-    '/images/cars/vector-gt.png'
+    '/images/cars/AT-VORT-DIFF-07.png',
+    '/images/cars/AT-MAG-SUSP-04.png'
   ]
 
   return (
