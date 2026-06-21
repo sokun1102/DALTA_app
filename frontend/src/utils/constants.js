@@ -94,7 +94,7 @@ export const featuredCars = [
     stock: 4,
     rating: 4.7,
     description: 'Bộ phuộc nhún từ lưu biến phản hồi siêu nhanh trong vòng phần nghìn giây. Đã trải qua các bài kiểm tra khắc nghiệt tại trường đua Nürburgring GP.',
-    image: '/images/cars/apex-r7.png',
+    image: '/images/cars/AT-MAG-SUSP-04.png',
   },
   {
     id: 5,
@@ -110,7 +110,7 @@ export const featuredCars = [
     stock: 8,
     rating: 4.6,
     description: 'Họng hút khí nạp được gia công CNC 5 trục từ phôi nhôm hàng không nguyên tấm, tối ưu hóa đường truyền và lưu lượng không khí vào buồng đốt động cơ.',
-    image: '/images/cars/vector-gt.png',
+    image: '/images/cars/AT-CNC-INT-05.png',
   },
   {
     id: 6,
@@ -126,7 +126,7 @@ export const featuredCars = [
     stock: 7,
     rating: 4.9,
     description: 'Bộ xử lý ECU thế hệ mới tích hợp thuật toán phân tích telemetry sinh học của tài xế theo thời gian thực, tự động căn chỉnh thông số động cơ và lực kéo.',
-    image: '/images/cars/nova-x.png',
+    image: '/images/cars/AT-NEUR-ECU-06.png',
   },
   {
     id: 7,
@@ -142,7 +142,7 @@ export const featuredCars = [
     stock: 6,
     rating: 4.7,
     description: 'Bộ ốp khuếch tán gió gầm sau tạo hiệu ứng Venturi hút chặt gầm xe xuống mặt đường, giúp ổn định trục sau khi vào cua ở tốc độ trên 250 KM/H.',
-    image: '/images/cars/apex-r7.png',
+    image: '/images/cars/AT-VORT-DIFF-07.png',
   },
   {
     id: 8,
@@ -158,7 +158,7 @@ export const featuredCars = [
     stock: 4,
     rating: 4.8,
     description: 'Bộ mâm nhôm đúc áp lực siêu bền cho xe đua. Thiết kế đa nan tản nhiệt tối ưu luồng gió làm mát cho cụm phanh gốm carbon bên trong.',
-    image: '/images/cars/vector-gt.png',
+    image: '/images/cars/AT-MONO-RIM-08.png',
   },
 ]
 

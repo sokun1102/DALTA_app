@@ -137,7 +137,7 @@ export default function ShowroomPage({ user, onNavigate, onOpenLogin, onOpenRegi
       type: 'Carbon aero module',
       desc: 'Cụm cánh gió, splitter và diffuser carbon dành cho xe track day, tập trung vào downforce ổn định và fitment chính xác.',
       specs: 'CARBON PREPREG / DOWNFORCE / TRACK FITMENT',
-      image: '/images/cars/apex-r7.png',
+      image: '/images/cars/AT-SPLIT-FRT-11.png',
       assemblyLogs: [
         { phase: '01', task: 'LIÊN KẾT KHUNG CARBON', tech: 'AT-ENG-08', status: 'ĐÃ KIỂM CHỨNG', hash: '0x8f2a9e' },
         { phase: '02', task: 'HÌNH HỌC HỆ THỐNG TREO', tech: 'AT-ENG-12', status: 'ĐÃ HIỆU CHUẨN', hash: '0x3c99a4' },
@@ -156,7 +156,7 @@ export default function ShowroomPage({ user, onNavigate, onOpenLogin, onOpenRegi
       type: 'Engine & exhaust module',
       desc: 'Cụm ống xả titanium, cổ hút CNC và ECU map dành cho xe hiệu năng cao, tăng phản hồi ga và giảm trọng lượng.',
       specs: 'TITANIUM / ECU MAP / ACTIVE VALVE',
-      image: '/images/cars/vector-gt.png',
+      image: '/images/cars/AT-CNC-INT-05.png',
       assemblyLogs: [
         { phase: '01', task: 'TÍCH HỢP BỘ PIN HYBRID', tech: 'AT-ENG-04', status: 'ĐẠT', hash: '0x7b11c9' },
         { phase: '02', task: 'ĐỒNG BỘ VI SAI PHÂN BỔ LỰC KÉO', tech: 'AT-ENG-14', status: 'ĐÃ HIỆU CHUẨN', hash: '0x99dd2f' },
@@ -175,7 +175,7 @@ export default function ShowroomPage({ user, onNavigate, onOpenLogin, onOpenRegi
       type: 'Brake & chassis module',
       desc: 'Cụm đĩa phanh carbon ceramic, pad track compound và brace chassis, ưu tiên lực phanh ổn định và độ cứng thân xe.',
       specs: 'CARBON CERAMIC / ZERO FADE / CHASSIS BRACE',
-      image: '/images/cars/nova-x.png',
+      image: '/images/cars/AT-TRK-PAD-09.png',
       assemblyLogs: [
         { phase: '01', task: 'GIÁP NHIỆT PIN THỂ RẮN', tech: 'AT-ENG-01', status: 'ĐẠT', hash: '0xef9212' },
         { phase: '02', task: 'HIỆU CHUẨN CUỘN DÂY 4 ĐỘNG CƠ', tech: 'AT-ENG-11', status: 'ĐÃ HIỆU CHUẨN', hash: '0x88f2cc' },

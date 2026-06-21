@@ -1,5 +1,7 @@
 services:
-  # 1. Database: MySQL
+  # =========================================
+  # Database: MySQL 8.0
+  # =========================================
   db:
     build:
       context: ./database
@@ -13,15 +15,24 @@ services:
       - MYSQL_PASSWORD=110204
     ports:
       - "3307:3306"
-    volumes:  
+    volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - dalta_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # 2. Backend: NestJS
-  backend:
+  # =========================================
+  # Auth & Users Service - Port 3000
+  # =========================================
+  auth-users:
     build:
-      context: ./backend
+      context: ./backend/src-auth-users
       dockerfile: Dockerfile
-    container_name: dalta_backend
+    container_name: dalta_auth_users
     restart: always
     ports:
       - "3000:3000"
@@ -36,13 +47,195 @@ services:
       - GOOGLE_CLIENT_ID=your-google-client-id
       - GOOGLE_CLIENT_SECRET=your-google-client-secret
       - GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
-      - FRONTEND_URL=http://localhost
+      - FRONTEND_URL=http://frontend
+      - AUTH_USERS_PORT=3000
+      - PRODUCTS_SERVICE_URL=http://products:3001
+      - CATEGORIES_SERVICE_URL=http://categories:3002
+      - CART_SERVICE_URL=http://cart:3004
+      - ORDERS_SERVICE_URL=http://orders:3003
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dalta_network
+
+  # =========================================
+  # Products Service - Port 3001
+  # =========================================
+  products:
+    build:
+      context: ./backend/src-products
+      dockerfile: Dockerfile
+    container_name: dalta_products
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=dalta_user
+      - DB_PASSWORD=110204
+      - DB_NAME=dalta_db
+      - PRODUCTS_PORT=3001
+      - ORDERS_SERVICE_URL=http://orders:3003
+      - INTERNAL_SERVICE_KEY=local-dev-internal-key
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dalta_network
+
+  # =========================================
+  # Categories Service - Port 3002
+  # =========================================
+  categories:
+    build:
+      context: ./backend/src-categories
+      dockerfile: Dockerfile
+    container_name: dalta_categories
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=dalta_user
+      - DB_PASSWORD=110204
+      - DB_NAME=dalta_db
+      - CATEGORIES_PORT=3002
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dalta_network
+
+  # =========================================
+  # Orders Service - Port 3003
+  # =========================================
+  orders:
+    build:
+      context: ./backend/src-orders
+      dockerfile: Dockerfile
+    container_name: dalta_orders
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=dalta_user
+      - DB_PASSWORD=110204
+      - DB_NAME=dalta_db
+      - ORDERS_PORT=3003
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - NOTIFICATIONS_SERVICE_URL=http://notifications:3007
+      - INTERNAL_SERVICE_KEY=local-dev-internal-key
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - dalta_network
 
-  # 3. Frontend: Vite + React
+  # =========================================
+  # Cart Service - Port 3004
+  # =========================================
+  cart:
+    build:
+      context: ./backend/src-cart
+      dockerfile: Dockerfile
+    container_name: dalta_cart
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=dalta_user
+      - DB_PASSWORD=110204
+      - DB_NAME=dalta_db
+      - CART_PORT=3004
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dalta_network
+
+  # =========================================
+  # API Gateway - Port 3005
+  # =========================================
+  gateway:
+    build:
+      context: ./backend/src-gateway
+      dockerfile: Dockerfile
+    container_name: dalta_gateway
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      - GATEWAY_PORT=3005
+      - AUTH_SERVICE_URL=http://auth-users:3000
+      - PRODUCTS_SERVICE_URL=http://products:3001
+      - CATEGORIES_SERVICE_URL=http://categories:3002
+      - CART_SERVICE_URL=http://cart:3004
+      - ORDERS_SERVICE_URL=http://orders:3003
+      - JWT_SECRET=Sieu_Bi_Mat_DALTA_Pro_123
+      - FRONTEND_URL=http://frontend
+    depends_on:
+      - auth-users
+      - products
+      - categories
+      - cart
+      - orders
+    networks:
+      - dalta_network
+
+  # =========================================
+  # Payments Service - Port 3006
+  # =========================================
+  payments:
+    build:
+      context: ./backend/src-payments
+      dockerfile: Dockerfile
+    container_name: dalta_payments
+    restart: always
+    ports:
+      - "3006:3006"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=dalta_user
+      - DB_PASSWORD=110204
+      - DB_NAME=dalta_db
+      - PAYMENTS_PORT=3006
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - ORDERS_SERVICE_URL=http://orders:3003
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dalta_network
+
+  # =========================================
+  # Notifications Service - Port 3007
+  # =========================================
+  notifications:
+    build:
+      context: ./backend/src-notifications
+      dockerfile: Dockerfile
+    container_name: dalta_notifications
+    restart: always
+    ports:
+      - "3007:3007"
+    environment:
+      - NOTIFICATIONS_PORT=3007
+    networks:
+      - dalta_network
+
+  # =========================================
+  # Frontend: Vite + React (Nginx)
+  # =========================================
   frontend:
     build:
       context: ./frontend
@@ -51,8 +244,16 @@ services:
     restart: always
     ports:
       - "80:80"
+    environment:
+      - VITE_API_BASE_URL=http://gateway:3005
     depends_on:
-      - backend
+      - gateway
+    networks:
+      - dalta_network
 
 volumes:
   mysql_data:
+
+networks:
+  dalta_network:
+    driver: bridge
